@@ -5,6 +5,7 @@ Extract keywords based on frequency related metrics
 """
 
 # pylint:disable=unused-argument
+import math
 from typing import Any
 
 
@@ -154,6 +155,11 @@ def calculate_tf(frequencies: dict[str, int]) -> dict[str, float] | None:
         dict[str, float] | None: Dictionary with tokens and TF values.
         In case of corrupt input arguments, None is returned.
     """
+    tf_dict={}
+    for key, value in frequencies.items():
+        tf_value=value/len(frequencies)
+        tf_dict[key]=tf_value
+    return tf_dict
 
 
 def calculate_tfidf(term_freq: dict[str, float], idf: dict[str, float]) -> dict[str, float] | None:
@@ -168,7 +174,12 @@ def calculate_tfidf(term_freq: dict[str, float], idf: dict[str, float]) -> dict[
         dict[str, float] | None: Dictionary with tokens and TF-IDF values.
         In case of corrupt input arguments, None is returned.
     """
-
+    tfidf_dict={}
+    for key, value in term_freq.items():
+        if key not in idf: tfidf_value = term_freq[key]*math.log(47)
+        else: tfidf_value=term_freq[key]*idf[key]
+        tfidf_dict[key]=tfidf_value
+    return tfidf_dict
 
 def calculate_expected_frequency(
     doc_freqs: dict[str, int], corpus_freqs: dict[str, int]
