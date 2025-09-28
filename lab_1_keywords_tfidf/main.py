@@ -158,13 +158,8 @@ def get_top_n(frequencies: dict[str, int | float], top: int) -> list[str] | None
         list[str] | None: Top-N tokens sorted by frequency.
         In case of corrupt input arguments, None is returned.
     """
-    if not isinstance(frequencies, dict):
-        return None
-    if not check_positive_int(top):
-        return None
-    if not all(isinstance(key, str) for key in frequencies.keys()):
-        return None
-    if not all(isinstance(value, (int, float)) for value in frequencies.values()):
+    if (not check_dict(frequencies, str, int, False) or
+        check_dict(frequencies, str, float, False)) or not check_positive_int(top):
         return None
     sorted_dict = sorted(frequencies, key=lambda k: frequencies[k], reverse=True)
     if top>len(sorted_dict):

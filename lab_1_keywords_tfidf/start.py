@@ -23,8 +23,8 @@ def main() -> None:
         target_text = file.read()
     with open("assets/stop_words.txt", "r", encoding="utf-8") as file:
         stop_words = file.read().split("\n")
-    with open("assets/IDF.json", "r", encoding="utf-8") as file:
-        idf = load(file)
+    #with open("assets/IDF.json", "r", encoding="utf-8") as file:
+     #   idf = load(file)
     words=clean_and_tokenize(target_text)
     if words is None:
         return
@@ -35,12 +35,12 @@ def main() -> None:
     if d_calc is None:
         return
     print(get_top_n(d_calc, 10))
-    tf_dict=calculate_tf(d_calc)
-    if tf_dict is None:
-        return
-    tfidf_dict=calculate_tfidf(tf_dict, idf)
-    if tfidf_dict is None:
-        return
+    #tf_dict=calculate_tf(d_calc)
+    #if tf_dict is None:
+    #    return
+    #tfidf_dict=calculate_tfidf(tf_dict, idf)
+    #if tfidf_dict is None:
+    #    return
     print(get_top_n(tfidf_dict, 10))
     #with open("assets/corpus_frequencies.json", "r", encoding="utf-8") as file:
     #    corpus_freqs = load(file)
