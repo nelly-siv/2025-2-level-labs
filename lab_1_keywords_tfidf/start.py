@@ -37,12 +37,14 @@ def main() -> None:
 
         if d_calc is None:
             return
+        else:
+            print(get_top_n(d_calc, 10))
 
-        print(get_top_n(d_calc, 10))
         tf_dict=calculate_tf(d_calc)
 
         if tf_dict is None:
             return
+
 
     with open("assets/IDF.json", "r", encoding="utf-8") as file:
         idf = load(file)
