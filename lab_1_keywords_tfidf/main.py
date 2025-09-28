@@ -116,8 +116,9 @@ def remove_stop_words(tokens: list[str], stop_words: list[str]) -> list[str] | N
         In case of corrupt input arguments, None is returned.
     """
     if (not check_list (tokens, str, can_be_empty=False)
-        and not check_list(stop_words, str, can_be_empty=True)):
+        or not check_list(stop_words, str, can_be_empty=True)):
         return None
+
     final_text=[]
     for x in tokens:
         if x not in stop_words:
@@ -138,6 +139,7 @@ def calculate_frequencies(tokens: list[str]) -> dict[str, int] | None:
     """
     if not check_list(tokens, str, can_be_empty=False):
         return None
+
     dic_freq={}
     for i in tokens:
         dic_freq[i]= tokens.count(i)
@@ -161,7 +163,7 @@ def get_top_n(frequencies: dict[str, int | float], top: int) -> list[str] | None
         check_dict(frequencies,str,int,False) or
         check_dict(frequencies,str,float,False)
     )
-    if not dict_check and check_positive_int(top):
+    if not dict_check or not check_positive_int(top):
         return None
     sorted_dict = list(dict(sorted(frequencies.items(), key=lambda x: x[1], reverse=True)))
     if top>len(sorted_dict):
