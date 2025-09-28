@@ -207,3 +207,55 @@ def calculate_tfidf(term_freq: dict[str, float], idf: dict[str, float]) -> dict[
         tfidf_value=value*idf.get(key,logarifm)
         tfidf_dict[key]=tfidf_value
     return tfidf_dict
+
+
+def calculate_expected_frequency(
+   doc_freqs: dict[str, int], corpus_freqs: dict[str, int]
+) -> dict[str, float] | None:
+   """
+   Calculate expected frequency for tokens based on document and corpus frequencies.
+
+   Args:
+       doc_freqs (dict[str, int]): Token frequencies in document
+       corpus_freqs (dict[str, int]): Token frequencies in corpus
+
+   Returns:
+       dict[str, float] | None: Dictionary with expected frequencies.
+       In case of corrupt input arguments, None is returned.
+    """
+   return None
+
+
+def calculate_chi_values(
+   expected: dict[str, float], observed: dict[str, int]
+) -> dict[str, float] | None:
+   """
+   Calculate chi-squared values for tokens.
+
+   Args:
+       expected (dict[str, float]): Expected frequencies
+       observed (dict[str, int]): Observed frequencies
+
+   Returns:
+       dict[str, float] | None: Dictionary with chi-squared values.
+       In case of corrupt input arguments, None is returned.
+   """
+   return None
+
+
+def extract_significant_words(
+   chi_values: dict[str, float], alpha: float
+) -> dict[str, float] | None:
+   """
+   Select tokens with chi-squared values greater than the critical
+threshold.
+
+   Args:
+       chi_values (dict[str, float]): Dictionary with chi-squared values
+       alpha (float): Significance level controlling chi-squared threshold
+
+   Returns:
+       dict[str, float] | None: Dictionary with significant tokens.
+       In case of corrupt input arguments, None is returned.
+   """
+   return None
