@@ -159,11 +159,11 @@ def get_top_n(frequencies: dict[str, int | float], top: int) -> list[str] | None
         list[str] | None: Top-N tokens sorted by frequency.
         In case of corrupt input arguments, None is returned.
     """
-    if not check_dict(frequencies,str,(int,float),False):
+    if not check_dict(frequencies, str, (int, float), False):
         return None
     if not check_positive_int(top):
         return None
-    sorted_dict = list(dict(sorted(frequencies.items(), key=lambda x: x[1], reverse=True)))
+    sorted_dict = sorted(frequencies, key=lambda k: frequencies[k], reverse=True)
     if top>len(sorted_dict):
         return sorted_dict
     return sorted_dict[:top]
@@ -184,7 +184,7 @@ def calculate_tf(frequencies: dict[str, int]) -> dict[str, float] | None:
         return None
     tf_dict={}
     for key, value in frequencies.items():
-        tf_value=value/len(frequencies)
+        tf_value=value/sum(frequencies.values())
         tf_dict[key]=tf_value
     return tf_dict
 
@@ -201,13 +201,12 @@ def calculate_tfidf(term_freq: dict[str, float], idf: dict[str, float]) -> dict[
         dict[str, float] | None: Dictionary with tokens and TF-IDF values.
         In case of corrupt input arguments, None is returned.
     """
-    if not check_dict(term_freq, str, float, False) and not check_dict(idf, str, float, False):
+    if not check_dict(term_freq, str, float, False) or not check_dict(idf, str, float, True):
         return None
     tfidf_dict={}
-    for key in term_freq:
-        if key not in idf:
-            tfidf_value = term_freq[key]*math.log(47)
-        else: tfidf_value=term_freq[key]*idf[key]
+    logarifm=math.log(47)
+    for key,value in term_freq.items():
+        tfidf_value=value*idf.get(key,logarifm)
         tfidf_dict[key]=tfidf_value
     return tfidf_dict
 
