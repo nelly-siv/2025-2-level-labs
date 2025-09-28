@@ -126,7 +126,7 @@ def remove_stop_words(tokens: list[str], stop_words: list[str]) -> list[str] | N
     return final_text
 
 
-def calculate_frequencies(tokens: list[str]) -> dict[str, int | float] | None:
+def calculate_frequencies(tokens: list[str]) -> dict[str, int] | None:
     """
     Create a frequency dictionary from the token sequence.
 
@@ -159,11 +159,9 @@ def get_top_n(frequencies: dict[str, int | float], top: int) -> list[str] | None
         list[str] | None: Top-N tokens sorted by frequency.
         In case of corrupt input arguments, None is returned.
     """
-    dict_valid = (
-    check_dict(frequencies, str, int, False) or
-    check_dict(frequencies, str, float, False))
-
-    if not dict_valid or not check_positive_int(top):
+    if not check_dict(frequencies,str,(int,float),False):
+        return None
+    if not check_positive_int(top):
         return None
     sorted_dict = list(dict(sorted(frequencies.items(), key=lambda x: x[1], reverse=True)))
     if top>len(sorted_dict):
