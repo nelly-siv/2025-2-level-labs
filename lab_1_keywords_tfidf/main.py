@@ -73,21 +73,11 @@ def clean_and_tokenize(text: str) -> list[str] | None:
         list[str] | None: A list of lowercase tokens without punctuation.
         In case of corrupt input arguments, None is returned.
     """
-    best_text=[]
-    clean_text=text.split()
-    for x in clean_text:
-        if x.islower()==False: x=x.lower()
-        if x.isalpha()==False:
-            for i in x:
-                key=x.index(i)
-                if i.isalpha()==False and not(i=='-' and x[0]!=i and x[-1]!=i):
-                    x=x[:key]+x[key+1:]
-        if len(x)>0 and '-' not in x:
-            best_text.append(x)
-        if '-' in x:
-            parts=x.split('-')
-            best_text.extend(parts)
-    return best_text
+    best_text=''
+    for ind, let in enumerate (text):
+        if let.isalnum() or let.isspace():
+            best_text+=let.lower()       
+    return best_text.split()
 
 
 def remove_stop_words(tokens: list[str], stop_words: list[str]) -> list[str] | None:
@@ -104,7 +94,8 @@ def remove_stop_words(tokens: list[str], stop_words: list[str]) -> list[str] | N
     """
     final_text=[]
     for x in tokens:
-        if x not in stop_words: final_text.append(x)
+        if x not in stop_words: 
+            final_text.append(x)
     return final_text
 
 
@@ -181,6 +172,7 @@ def calculate_tfidf(term_freq: dict[str, float], idf: dict[str, float]) -> dict[
         tfidf_dict[key]=tfidf_value
     return tfidf_dict
 
+'''
 def calculate_expected_frequency(
     doc_freqs: dict[str, int], corpus_freqs: dict[str, int]
 ) -> dict[str, float] | None:
@@ -227,3 +219,4 @@ def extract_significant_words(
         dict[str, float] | None: Dictionary with significant tokens.
         In case of corrupt input arguments, None is returned.
     """
+    '''
