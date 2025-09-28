@@ -37,7 +37,6 @@ def check_dict(user_input: Any, key_type: type, value_type: type, can_be_empty: 
         key_type (type): Expected type of dictionary keys
         value_type (type): Expected type of dictionary values
         can_be_empty (bool): Whether an empty dictionary is allowed
-
     Returns:
         bool: True if valid, False otherwise
     """
@@ -159,9 +158,10 @@ def get_top_n(frequencies: dict[str, int | float], top: int) -> list[str] | None
         list[str] | None: Top-N tokens sorted by frequency.
         In case of corrupt input arguments, None is returned.
     """
-    if not check_dict(frequencies, str, (int, float), False):
-        return None
-    if not check_positive_int(top):
+    has_int_values = check_dict(frequencies, str, int, False)
+    has_float_values = check_dict(frequencies, str, float, False)
+
+    if not (has_int_values or has_float_values) or not check_positive_int(top):
         return None
     sorted_dict = sorted(frequencies, key=lambda k: frequencies[k], reverse=True)
     if top>len(sorted_dict):

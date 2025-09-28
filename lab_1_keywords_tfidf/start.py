@@ -34,14 +34,14 @@ def main() -> None:
     d_calc=calculate_frequencies(final_words)
     if d_calc is None:
         return
-    print(get_top_n(d_calc, 10))
+    print(get_top_n(d_calc, 10.00))
     tf_dict=calculate_tf(d_calc)
     if tf_dict is None:
         return    
     tfidf_dict=calculate_tfidf(tf_dict, idf)
     if tfidf_dict is None:
         return
-    print(get_top_n(tfidf_dict, 10))
+    print(get_top_n(tfidf_dict, 10.00))
     #with open("assets/corpus_frequencies.json", "r", encoding="utf-8") as file:
     #    corpus_freqs = load(file)
     #result = None
