@@ -9,6 +9,7 @@ import math
 from typing import Any
 
 
+eng_str="abcdefghijklmnopqrstuvwxyz"
 def check_list(user_input: Any, elements_type: type, can_be_empty: bool) -> bool:
     """
     Check if the object is a list containing elements of a certain type.
@@ -121,7 +122,8 @@ def remove_stop_words(tokens: list[str], stop_words: list[str]) -> list[str] | N
     final_text=[]
     for x in tokens:
         if x not in stop_words:
-            final_text.append(x)
+            if x not in eng_str:
+                final_text.append(x)
     return final_text
 
 
@@ -223,7 +225,6 @@ def calculate_expected_frequency(
        dict[str, float] | None: Dictionary with expected frequencies.
        In case of corrupt input arguments, None is returned.
     """
-   return None
 
 
 def calculate_chi_values(
@@ -240,7 +241,6 @@ def calculate_chi_values(
        dict[str, float] | None: Dictionary with chi-squared values.
        In case of corrupt input arguments, None is returned.
    """
-   return None
 
 
 def extract_significant_words(
@@ -258,4 +258,3 @@ threshold.
        dict[str, float] | None: Dictionary with significant tokens.
        In case of corrupt input arguments, None is returned.
    """
-   return None
