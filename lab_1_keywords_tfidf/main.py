@@ -8,7 +8,6 @@ Extract keywords based on frequency related metrics
 import math
 from typing import Any
 
-
 eng_str="abcdefghijklmnopqrstuvwxyz"
 def check_list(user_input: Any, elements_type: type, can_be_empty: bool) -> bool:
     """
