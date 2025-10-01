@@ -8,7 +8,7 @@ Extract keywords based on frequency related metrics
 import math
 from typing import Any
 
-eng_str="abcdefghijklmnopqrstuvwxyz"
+
 def check_list(user_input: Any, elements_type: type, can_be_empty: bool) -> bool:
     """
     Check if the object is a list containing elements of a certain type.
@@ -38,6 +38,7 @@ def check_dict(user_input: Any, key_type: type, value_type: type, can_be_empty: 
         key_type (type): Expected type of dictionary keys
         value_type (type): Expected type of dictionary values
         can_be_empty (bool): Whether an empty dictionary is allowed
+
     Returns:
         bool: True if valid, False otherwise
     """
@@ -197,18 +198,18 @@ def calculate_tfidf(term_freq: dict[str, float], idf: dict[str, float]) -> dict[
 
 
 def calculate_expected_frequency(
-   doc_freqs: dict[str, int], corpus_freqs: dict[str, int]
+    doc_freqs: dict[str, int], corpus_freqs: dict[str, int]
 ) -> dict[str, float] | None:
-   """
-   Calculate expected frequency for tokens based on document and corpus frequencies.
+    """
+    Calculate expected frequency for tokens based on document and corpus frequencies.
 
-   Args:
-       doc_freqs (dict[str, int]): Token frequencies in document
-       corpus_freqs (dict[str, int]): Token frequencies in corpus
+    Args:
+        doc_freqs (dict[str, int]): Token frequencies in document
+        corpus_freqs (dict[str, int]): Token frequencies in corpus
 
-   Returns:
-       dict[str, float] | None: Dictionary with expected frequencies.
-       In case of corrupt input arguments, None is returned.
+    Returns:
+        dict[str, float] | None: Dictionary with expected frequencies.
+        In case of corrupt input arguments, None is returned.
     """
     if not all([check_dict(doc_freqs, str, int, False),
         check_dict(corpus_freqs, str, int, True)]):
@@ -224,14 +225,14 @@ def calculate_expected_frequency(
 
 
 def calculate_chi_values(
-   expected: dict[str, float], observed: dict[str, int]
+    expected: dict[str, float], observed: dict[str, int]
 ) -> dict[str, float] | None:
-   """
-   Calculate chi-squared values for tokens.
+    """
+    Calculate chi-squared values for tokens.
 
-   Args:
-       expected (dict[str, float]): Expected frequencies
-       observed (dict[str, int]): Observed frequencies
+    Args:
+        expected (dict[str, float]): Expected frequencies
+        observed (dict[str, int]): Observed frequencies
 
     Returns:
         dict[str, float] | None: Dictionary with chi-squared values.
@@ -245,15 +246,14 @@ def calculate_chi_values(
 
 
 def extract_significant_words(
-   chi_values: dict[str, float], alpha: float
+    chi_values: dict[str, float], alpha: float
 ) -> dict[str, float] | None:
-   """
-   Select tokens with chi-squared values greater than the critical
-threshold.
+    """
+    Select tokens with chi-squared values greater than the critical threshold.
 
-   Args:
-       chi_values (dict[str, float]): Dictionary with chi-squared values
-       alpha (float): Significance level controlling chi-squared threshold
+    Args:
+        chi_values (dict[str, float]): Dictionary with chi-squared values
+        alpha (float): Significance level controlling chi-squared threshold
 
     Returns:
         dict[str, float] | None: Dictionary with significant tokens.
