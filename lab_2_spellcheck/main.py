@@ -19,6 +19,14 @@ def build_vocabulary(tokens: list[str]) -> dict[str, float] | None:
 
     In case of corrupt input arguments, None is returned.
     """
+    if not tokens or not isinstance(tokens,list):
+        return None
+    out_dict={}
+    for token in tokens:
+        frequency=tokens.count(token)
+        value_dict=frequency/len(tokens)
+        out_dict[token]=value_dict
+    return out_dict
 
 
 def find_out_of_vocab_words(tokens: list[str], vocabulary: dict[str, float]) -> list[str] | None:
@@ -34,6 +42,15 @@ def find_out_of_vocab_words(tokens: list[str], vocabulary: dict[str, float]) -> 
 
     In case of corrupt input arguments, None is returned.
     """
+    if not tokens or not isinstance(tokens,list):
+        return None
+    if not vocabulary or not isinstance(vocabulary,dict):
+        return None
+    alien_tokens=[]
+    for token in tokens:
+        if token not in vocabulary:
+            alien_tokens.append(token)
+    return alien_tokens
 
 
 def calculate_jaccard_distance(token: str, candidate: str) -> float | None:
@@ -50,7 +67,26 @@ def calculate_jaccard_distance(token: str, candidate: str) -> float | None:
     In case of corrupt input arguments, None is returned.
     In case of both strings being empty, 0.0 is returned.
     """
-
+    if not token or not isinstance(token,str):
+        return None
+    if not candidate or not isinstance(candidate,str):
+        return None
+    letters_1=set(token)
+    letters_2=set(candidate)
+    if len(letters_1)==0 or len(letters_2)==0:
+        return 1.0
+    cross=set()
+    unite=set()
+    for i in letters_1:
+        if i in letters_2:
+            cross.add(i)
+        unite.add(i)
+    for i in letters_2:
+        if i in letters_1:
+            cross.add(i)
+        unite.add(i)
+    jaccard=1-(len(cross)/len(unite))
+    return jaccard
 
 def calculate_distance(
     first_token: str,
@@ -72,6 +108,20 @@ def calculate_distance(
 
     In case of corrupt input arguments or unsupported method, None is returned.
     """
+    if not first_token or not isinstance(first_token,str):
+        return None
+    if not vocabulary or not isinstance(vocabulary,dict):
+        return None
+    if (not method or
+        method not in ["jaccard","frequency-based","levenshtein","jaro-winkler"]):
+        return None
+    if method=='jaccard':
+        jaccard_dict={}
+        for key in vocabulary:
+            j_dist=calculate_jaccard_distance(first_token,key)
+            jaccard_dict[key]=j_dist
+        return jaccard_dict
+
 
 
 def find_correct_word(
@@ -95,6 +145,55 @@ def find_correct_word(
 
     In case of empty vocabulary, None is returned.
     """
+    if not wrong_word or not isinstance(wrong_word,str):
+        return None
+    if not vocabulary or not isinstance(vocabulary,dict):
+        return None
+    if (not method or
+        method not in ["jaccard","frequency-based","levenshtein","jaro-winkler"]):
+        return None
+    if not alphabet or not isinstance(alphabet,list):
+        return None
+    if method=="jaccard":
+        variants={}
+        best_variants=[]
+        min_len=None
+        final_variants=[]
+        for key in vocabulary.keys():
+            key=key.lower()
+            distance=calculate_jaccard_distance(wrong_word,key)
+            if distance>0 and distance<1:
+                variants[key]=distance
+                difference=abs(len(key)-len(wrong_word))
+                if difference<min_len:
+                    min_len=difference
+        if not variants:
+            return None
+        min_dist=min(variants.values())
+        for key,value in variants.items():
+            if value==min_dist:
+                best_variants.append(key)
+        if not best_variants:
+            return None
+        if len(best_variants)>1:
+            for word in best_variants:
+                if len(word)==min_len:
+                    final_variants.append(word)
+        else:
+            return best_variants[0]
+        if not final_variants:
+            return None
+        if len(final_variants)>1:
+            return min(final_variants)
+        else:
+            return final_variants[0]
+
+
+
+
+
+
+
 
 
 def initialize_levenshtein_matrix(
