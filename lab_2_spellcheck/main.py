@@ -46,6 +46,8 @@ def find_out_of_vocab_words(tokens: list[str], vocabulary: dict[str, float]) -> 
 
     In case of corrupt input arguments, None is returned.
     """
+    if tokens is None or vocabulary is None:
+        return None
     if not isinstance(tokens, list) or not isinstance(vocabulary, dict):
         return None
     alien_tokens=[]
@@ -167,16 +169,12 @@ def find_correct_word(
     if method=="jaccard":
         variants={}
         best_variants=[]
-        min_len=10000
         final_variants=[]
         for key in vocabulary.keys():
             key=key.lower()
             distance=calculate_jaccard_distance(wrong_word,key)
-            if distance>0 and distance<1:
+            if distance is not None:
                 variants[key]=distance
-                difference=abs(len(key)-len(wrong_word))
-                if difference<min_len:
-                    min_len=difference
         if not variants:
             return None
         min_dist=min(variants.values())
@@ -185,18 +183,21 @@ def find_correct_word(
                 best_variants.append(key)
         if not best_variants:
             return None
-        if len(best_variants)>1:
+        if len(best_variants)==1:
+            return best_variants[0]
+        else:
+            len_diff={}
+            for word in best_variants:
+                diff=abs(len(word)-len(wrong_word))
+                len_diff[word]=diff
+            min_len=min(len_diff.values())
             for word in best_variants:
                 if len(word)==min_len:
                     final_variants.append(word)
-        else:
-            return best_variants[0]
         if not final_variants:
             return None
-        if len(final_variants)>1:
-            return min(final_variants)
         else:
-            return final_variants[0]
+            return min(final_variants)
 
 
 
