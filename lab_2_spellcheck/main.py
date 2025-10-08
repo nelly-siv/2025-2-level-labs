@@ -19,7 +19,11 @@ def build_vocabulary(tokens: list[str]) -> dict[str, float] | None:
 
     In case of corrupt input arguments, None is returned.
     """
-    if not tokens or not isinstance(tokens,list):
+    if not tokens:
+        return None
+    if not isinstance(tokens,list):
+        return None
+    if not all(isinstance(token, str) for token in tokens):
         return None
     out_dict={}
     for token in tokens:
@@ -46,6 +50,10 @@ def find_out_of_vocab_words(tokens: list[str], vocabulary: dict[str, float]) -> 
         return None
     if not vocabulary or not isinstance(vocabulary,dict):
         return None
+    if not all(isinstance(token, str) for token in tokens):
+        return None
+    if not all(isinstance(k, str) for k in vocabulary.keys()):
+        return None
     alien_tokens=[]
     for token in tokens:
         if token not in vocabulary:
@@ -67,14 +75,12 @@ def calculate_jaccard_distance(token: str, candidate: str) -> float | None:
     In case of corrupt input arguments, None is returned.
     In case of both strings being empty, 0.0 is returned.
     """
-    if not token or not isinstance(token,str):
+    if not isinstance(token,str) or not isinstance(candidate,str):
         return None
-    if not candidate or not isinstance(candidate,str):
-        return None
+    if not token or not candidate:
+        return 1.0
     letters_1=set(token)
     letters_2=set(candidate)
-    if len(letters_1)==0 or len(letters_2)==0:
-        return 1.0
     cross=set()
     unite=set()
     for i in letters_1:
@@ -108,9 +114,15 @@ def calculate_distance(
 
     In case of corrupt input arguments or unsupported method, None is returned.
     """
-    if not first_token or not isinstance(first_token,str):
+    if not first_token:
+        return None
+    if not isinstance(first_token,str):
         return None
     if not vocabulary or not isinstance(vocabulary,dict):
+        return None
+    if not all(isinstance(k, str) for k in vocabulary.keys()):
+        return None
+    if not all(isinstance(v, (int, float)) for v in vocabulary.values()):
         return None
     if (not method or
         method not in ["jaccard","frequency-based","levenshtein","jaro-winkler"]):
@@ -119,6 +131,8 @@ def calculate_distance(
         jaccard_dict={}
         for key in vocabulary:
             j_dist=calculate_jaccard_distance(first_token,key)
+            if j_dist is None:
+                return None
             jaccard_dict[key]=j_dist
         return jaccard_dict
 
@@ -149,6 +163,10 @@ def find_correct_word(
         return None
     if not vocabulary or not isinstance(vocabulary,dict):
         return None
+    if not all(isinstance(k, str) for k in vocabulary.keys()):
+        return None
+    if not all(isinstance(v, (int, float)) for v in vocabulary.values()):
+        return None
     if (not method or
         method not in ["jaccard","frequency-based","levenshtein","jaro-winkler"]):
         return None
@@ -162,6 +180,8 @@ def find_correct_word(
         for key in vocabulary.keys():
             key=key.lower()
             distance=calculate_jaccard_distance(wrong_word,key)
+            if not distance:
+                return None
             if distance>0 and distance<1:
                 variants[key]=distance
                 difference=abs(len(key)-len(wrong_word))
