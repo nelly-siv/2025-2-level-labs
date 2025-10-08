@@ -46,17 +46,11 @@ def find_out_of_vocab_words(tokens: list[str], vocabulary: dict[str, float]) -> 
 
     In case of corrupt input arguments, None is returned.
     """
-    if not tokens or not isinstance(tokens,list):
-        return None
-    if not vocabulary or not isinstance(vocabulary,dict):
-        return None
-    if not all(isinstance(token, str) for token in tokens):
-        return None
-    if not all(isinstance(k, str) for k in vocabulary.keys()):
+    if not isinstance(tokens, list) or not isinstance(vocabulary, dict):
         return None
     alien_tokens=[]
     for token in tokens:
-        if token not in vocabulary:
+        if token not in vocabulary and isinstance(token,str):
             alien_tokens.append(token)
     return alien_tokens
 
@@ -170,18 +164,14 @@ def find_correct_word(
     if (not method or
         method not in ["jaccard","frequency-based","levenshtein","jaro-winkler"]):
         return None
-    if not alphabet or not isinstance(alphabet,list):
-        return None
     if method=="jaccard":
         variants={}
         best_variants=[]
-        min_len=None
+        min_len=10000
         final_variants=[]
         for key in vocabulary.keys():
             key=key.lower()
             distance=calculate_jaccard_distance(wrong_word,key)
-            if not distance:
-                return None
             if distance>0 and distance<1:
                 variants[key]=distance
                 difference=abs(len(key)-len(wrong_word))
