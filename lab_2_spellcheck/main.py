@@ -46,13 +46,15 @@ def find_out_of_vocab_words(tokens: list[str], vocabulary: dict[str, float]) -> 
 
     In case of corrupt input arguments, None is returned.
     """
-    if tokens is None or vocabulary is None:
+    if not tokens or not vocabulary:
         return None
     if not isinstance(tokens, list) or not isinstance(vocabulary, dict):
         return None
     if not all(isinstance(token, str) for token in tokens):
         return None
     if not all(isinstance(k, str) for k in vocabulary.keys()):
+        return None
+    if not all(isinstance(v,float) for v in vocabulary.values()):
         return None
     alien_tokens=[]
     for token in tokens:
