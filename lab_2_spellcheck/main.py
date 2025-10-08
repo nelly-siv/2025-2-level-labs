@@ -50,9 +50,13 @@ def find_out_of_vocab_words(tokens: list[str], vocabulary: dict[str, float]) -> 
         return None
     if not isinstance(tokens, list) or not isinstance(vocabulary, dict):
         return None
+    if not all(isinstance(token, str) for token in tokens):
+        return None
+    if not all(isinstance(k, str) for k in vocabulary.keys()):
+        return None
     alien_tokens=[]
     for token in tokens:
-        if token not in vocabulary and isinstance(token,str):
+        if token not in vocabulary:
             alien_tokens.append(token)
     return alien_tokens
 
