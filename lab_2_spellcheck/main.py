@@ -391,13 +391,12 @@ def calculate_frequency_distance(
     if not check_list(alphabet,str,False):
         return None
     candidates=propose_candidates(word,alphabet)
-    if not candidates:
+    if not candidates or candidates is None:
         return None
-    result={}
+    result={token: 1.0 for token in frequencies}
     for version in candidates:
         if version in frequencies:
-            freq_dist=1-(frequencies[version])
-            result[version]=freq_dist
+            result[version]=1-frequencies[version]
     return result
 
 
