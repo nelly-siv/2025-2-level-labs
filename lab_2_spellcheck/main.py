@@ -121,6 +121,8 @@ def calculate_distance(
             jaccard_dict[key]=j_dist
         return jaccard_dict
     elif method=='frequency-based':
+        if alphabet is None or check_list(alphabet,str,True):
+            return {word: 1.0 for word in vocabulary}
         return calculate_frequency_distance(first_token,vocabulary,alphabet)
 
 
@@ -145,16 +147,19 @@ def find_correct_word(
 
     In case of empty vocabulary, None is returned.
     """
-    if not wrong_word or not isinstance(wrong_word,str):
+    if alphabet is None:
+        alphabet=[]
+    if not isinstance(wrong_word,str):
         return None
     if not check_dict(vocabulary,str,float,False):
         return None
-    if (not method or
-        method not in ["jaccard","frequency-based","levenshtein","jaro-winkler"]):
+    if method not in ["jaccard","frequency-based","levenshtein","jaro-winkler"]:
+        return None
+    if not check_list(alphabet,str,True):
         return None
     best_variants=[]
     variants=calculate_distance(wrong_word,vocabulary,method,alphabet)
-    if not variants:
+    if variants is None:
         return None
     min_dist=min(variants.values())
     for key,value in variants.items():
@@ -223,7 +228,7 @@ def delete_letter(word: str) -> list[str]:
 
     In case of corrupt input arguments, empty list is returned.
     """
-    if not word or not isinstance(word,str):
+    if not isinstance(word,str):
         return []
     candidates=[]
     for i in range(len(word)):
@@ -246,7 +251,7 @@ def add_letter(word: str, alphabet: list[str]) -> list[str]:
 
     In case of corrupt input arguments, empty list is returned.
     """
-    if not word or not isinstance(word,str):
+    if not isinstance(word,str):
         return []
     if not check_list(alphabet,str,False):
         return []
@@ -273,7 +278,7 @@ def replace_letter(word: str, alphabet: list[str]) -> list[str]:
 
     In case of corrupt input arguments, empty list is returned.
     """
-    if not word or not isinstance(word,str):
+    if not isinstance(word,str) or word=="":
         return []
     if not check_list(alphabet,str,False):
         return []
@@ -298,7 +303,7 @@ def swap_adjacent(word: str) -> list[str]:
 
     In case of corrupt input arguments, empty list is returned.
     """
-    if not word or not isinstance(word,str):
+    if not isinstance(word,str):
         return []
     if len(word)<2:
         return []
@@ -325,7 +330,7 @@ def generate_candidates(word: str, alphabet: list[str]) -> list[str] | None:
     """
     if not isinstance(word,str):
         return None
-    if not check_list(alphabet,str,False):
+    if not check_list(alphabet,str,True):
         return None
     candidates=[]
     candidates.extend(delete_letter(word))
@@ -384,16 +389,16 @@ def calculate_frequency_distance(
 
     In case of corrupt input arguments, None is returned.
     """
-    if not word or not isinstance(word,str):
+    if not isinstance(word,str):
         return None
     if not frequencies or not isinstance(frequencies,dict):
         return None
     if not check_list(alphabet,str,False):
         return None
     candidates=propose_candidates(word,alphabet)
-    if not candidates or candidates is None:
-        return None
     result={token: 1.0 for token in frequencies}
+    if not candidates or candidates is None:
+        return result
     for version in candidates:
         if version in frequencies:
             result[version]=1-frequencies[version]

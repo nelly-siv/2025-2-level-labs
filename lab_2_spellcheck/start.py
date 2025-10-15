@@ -30,27 +30,24 @@ def main() -> None:
         open("assets/incorrect_sentence_5.txt", "r", encoding="utf-8") as f5,
     ):
         sentences = [f.read() for f in (f1, f2, f3, f4, f5)]
-    tokens=clean_and_tokenize(text)
-    no_stop_words=remove_stop_words(tokens,stop_words)
-    voc=build_vocabulary(no_stop_words) #valuable words from m&m and their frequencies
+    tokens=clean_and_tokenize(text) or []
+    no_stop_words=remove_stop_words(tokens,stop_words) or []
+    voc=build_vocabulary(no_stop_words) or {}
     #print(voc)
     tokens_in_sentences=[]
     for sentence in sentences:
-        sentence=sentence.strip()
-        for word in sentence.split():
-            tokens_in_sentences.append(word)
-    aliens=find_out_of_vocab_words(tokens_in_sentences,voc) #words that in sentences but not in m&m
-    #print(aliens)
-    corrections_jaccard={}
-    corrections_freq_based={}
-    corrections_jaccard=find_correct_word("кот",{"кот": 0.5, "пёс": 0.5},"jaccard")
+        sentence_tokens=clean_and_tokenize(sentence) or []
+        sentence_no_stop_words=remove_stop_words(sentence_tokens,stop_words) or []
+        tokens_in_sentences.extend(sentence_no_stop_words)
+    aliens=find_out_of_vocab_words(tokens_in_sentences,voc) or []
+    print(aliens)
     alphabet = ["а","б","в","г","д","е","ё","ж","з","и","й","к","л","м","н","о",
-           "п","р","с","т","у","ф","х","ц","ч","ш","щ","ъ","ы","ь","э","ю","я",
-           "А","Б","В","Г","Д","Е","Ё","Ж","З","И","Й","К","Л","М","Н","О",
-           "П","Р","С","Т","У","Ф","Х","Ц","Ч","Ш","Щ","Ъ","Ы","Ь","Э","Ю","Я"]
-    corrections_freq_based[word]=find_correct_word("маладой",voc,"frequency-based",alphabet)
-    print(corrections_jaccard)
-    print(corrections_freq_based)
+           "п","р","с","т","у","ф","х","ц","ч","ш","щ","ъ","ы","ь","э","ю","я"]
+    for token in aliens:
+        corrections_jaccard=find_correct_word(token,voc,"jaccard",alphabet) or {}
+        corrections_freq_based=find_correct_word(token,voc,"frequency-based",alphabet) or {}
+        print(token,corrections_jaccard)
+        print(corrections_freq_based,token)
     result = corrections_freq_based
     assert result, "Result is None"
 
