@@ -104,9 +104,7 @@ def calculate_distance(
 
     In case of corrupt input arguments or unsupported method, None is returned.
     """
-    if not first_token:
-        return None
-    if not isinstance(first_token,str):
+    if not first_token or not isinstance(first_token,str):
         return None
     if not check_dict(vocabulary,str,float,False):
         return None
@@ -117,21 +115,18 @@ def calculate_distance(
         if alphabet is None or not check_list(alphabet,str,True):
             return {word: 1.0 for word in vocabulary}
         frequency_dist = calculate_frequency_distance(first_token,vocabulary,alphabet)
-        if frequency_dist is None:
-            return None
         return frequency_dist
     sum_distance={}
     for key in vocabulary:
+        token_distance = None
         if method == 'jaccard':
             token_distance = calculate_jaccard_distance(first_token,key)
-            if token_distance is None:
-                return None
         elif method == 'levenshtein':
             token_distance = calculate_levenshtein_distance(first_token,key)
-            if token_distance is None:
-                return None
+        if token_distance is None:
+            return None
         sum_distance[key] = token_distance
-        return sum_distance
+    return sum_distance
 
 
 def find_correct_word(
@@ -179,9 +174,8 @@ def find_correct_word(
         return None
     if len(best_variants) == 1:
         return best_variants[0]
-    else:
-        best_variants.sort(key = lambda word: (abs(len(word) - len(wrong_word)), word))
-        return best_variants[0]
+    best_variants.sort(key = lambda word: (abs(len(word) - len(wrong_word)), word))
+    return best_variants[0]
 
 
 def initialize_levenshtein_matrix(
@@ -327,9 +321,9 @@ def replace_letter(word: str, alphabet: list[str]) -> list[str]:
     if not check_list(alphabet,str,False):
         return []
     replacements = []
-    for i in range(len(word)):
+    for i,value in enumerate(word):
         for letter in alphabet:
-            if letter != word[i]:
+            if letter != value:
                 new_word = word[:i] + letter + word[i+1:]
                 replacements.append(new_word)
     return sorted(replacements)
@@ -440,7 +434,9 @@ def calculate_frequency_distance(
         if not isinstance(token,str) or not isinstance(value,(int,float)):
             return None
     candidates = propose_candidates(word,alphabet)
-    result = {token: 1.0 for token in frequencies}
+    result: dict[str,float] = {}
+    for token in frequencies:
+        result[token] = 1.0
     if not candidates or candidates is None:
         return result
     for version in candidates:
