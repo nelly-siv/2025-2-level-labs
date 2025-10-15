@@ -7,11 +7,10 @@ from lab_1_keywords_tfidf.main import (
     clean_and_tokenize,
     remove_stop_words,
 )
-
 from lab_2_spellcheck.main import (
     build_vocabulary,
     find_correct_word,
-    find_out_of_vocab_words
+    find_out_of_vocab_words,
 )
 
 
@@ -53,8 +52,8 @@ def main() -> None:
         corrections_freq_based[word]=find_correct_word(word,voc,"frequency-based",alphabet)
     print(corrections_jaccard)
     print(corrections_freq_based)
-#    result = None
-#    assert result, "Result is None"
+    result = None
+    assert result, "Result is None"
 
 
 if __name__ == "__main__":
