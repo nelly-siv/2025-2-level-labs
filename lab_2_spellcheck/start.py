@@ -43,12 +43,16 @@ def main() -> None:
     print(aliens)
     alphabet = ["а","б","в","г","д","е","ё","ж","з","и","й","к","л","м","н","о",
            "п","р","с","т","у","ф","х","ц","ч","ш","щ","ъ","ы","ь","э","ю","я"]
+    sum_results={}
     for token in aliens:
         corrections_jaccard=find_correct_word(token,voc,"jaccard",alphabet) or {}
         corrections_freq_based=find_correct_word(token,voc,"frequency-based",alphabet) or {}
-        print(token,corrections_jaccard)
-        print(corrections_freq_based,token)
-    result = corrections_freq_based
+        sum_results[token]={
+            'jaccard': corrections_jaccard,
+            'frequency-based': corrections_freq_based,
+        }
+    print(sum_results)
+    result = sum_results
     assert result, "Result is None"
 
 
