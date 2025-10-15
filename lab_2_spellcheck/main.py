@@ -229,7 +229,7 @@ def delete_letter(word: str) -> list[str]:
     for i in range(len(word)):
         new_word=word[:i]+word[i+1:]
         candidates.append(new_word)
-    return candidates
+    return sorted(candidates)
 
 
 def add_letter(word: str, alphabet: list[str]) -> list[str]:
@@ -255,7 +255,7 @@ def add_letter(word: str, alphabet: list[str]) -> list[str]:
         for letter in alphabet:
             new_word=word[:i]+letter+word[i:]
             candidates.append(new_word)
-    return candidates
+    return sorted(candidates)
 
 
 
@@ -306,7 +306,7 @@ def swap_adjacent(word: str) -> list[str]:
     for i in range(len(word)-1):
         new_word=word[:i]+word[i+1]+word[i]+word[i+2:]
         swapping.append(new_word)
-    return swapping
+    return sorted(swapping)
 
 
 def generate_candidates(word: str, alphabet: list[str]) -> list[str] | None:
