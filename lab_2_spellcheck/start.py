@@ -30,10 +30,6 @@ def main() -> None:
         open("assets/incorrect_sentence_5.txt", "r", encoding="utf-8") as f5,
     ):
         sentences = [f.read() for f in (f1, f2, f3, f4, f5)]
-    alphabet = ["а","б","в","г","д","е","ё","ж","з","и","й","к","л","м","н","о",
-           "п","р","с","т","у","ф","х","ц","ч","ш","щ","ъ","ы","ь","э","ю","я",
-           "А","Б","В","Г","Д","Е","Ё","Ж","З","И","Й","К","Л","М","Н","О",
-           "П","Р","С","Т","У","Ф","Х","Ц","Ч","Ш","Щ","Ъ","Ы","Ь","Э","Ю","Я"]
     tokens=clean_and_tokenize(text)
     no_stop_words=remove_stop_words(tokens,stop_words)
     voc=build_vocabulary(no_stop_words) #valuable words from m&m and their frequencies
@@ -47,12 +43,15 @@ def main() -> None:
     #print(aliens)
     corrections_jaccard={}
     corrections_freq_based={}
-    for word in aliens:
-        corrections_jaccard[word]=find_correct_word(word,voc,"jaccard",alphabet)
-        corrections_freq_based[word]=find_correct_word(word,voc,"frequency-based",alphabet)
+    corrections_jaccard=find_correct_word("кот",{"кот": 0.5, "пёс": 0.5},"jaccard")
+    alphabet = ["а","б","в","г","д","е","ё","ж","з","и","й","к","л","м","н","о",
+           "п","р","с","т","у","ф","х","ц","ч","ш","щ","ъ","ы","ь","э","ю","я",
+           "А","Б","В","Г","Д","Е","Ё","Ж","З","И","Й","К","Л","М","Н","О",
+           "П","Р","С","Т","У","Ф","Х","Ц","Ч","Ш","Щ","Ъ","Ы","Ь","Э","Ю","Я"]
+    corrections_freq_based[word]=find_correct_word("маладой",voc,"frequency-based",alphabet)
     print(corrections_jaccard)
     print(corrections_freq_based)
-    result = None
+    result = corrections_freq_based
     assert result, "Result is None"
 
 

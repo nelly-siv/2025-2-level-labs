@@ -4,7 +4,8 @@ Lab 2.
 
 # pylint:disable=unused-argument
 from typing import Literal
-from lab_1_keywords_tfidf.main import(
+
+from lab_1_keywords_tfidf.main import (
     check_dict,
     check_list,
 )
@@ -279,11 +280,9 @@ def replace_letter(word: str, alphabet: list[str]) -> list[str]:
     replacements=[]
     for i in range(len(word)):
         for letter in alphabet:
-            if not word[i].islower():
-                letter=letter.upper()
             new_word=word[:i]+letter+word[i+1:]
             replacements.append(new_word)
-    return replacements
+    return sorted(replacements)
 
 
 def swap_adjacent(word: str) -> list[str]:
@@ -301,8 +300,10 @@ def swap_adjacent(word: str) -> list[str]:
     """
     if not word or not isinstance(word,str):
         return []
+    if len(word)<2:
+        return []
     swapping=[]
-    for i in range(len(word)-2):
+    for i in range(len(word)-1):
         new_word=word[:i]+word[i+1]+word[i]+word[i+2:]
         swapping.append(new_word)
     return swapping
@@ -322,17 +323,16 @@ def generate_candidates(word: str, alphabet: list[str]) -> list[str] | None:
 
     In case of corrupt input arguments, None is returned.
     """
-    if not word or not isinstance(word,str):
+    if not isinstance(word,str):
         return None
     if not check_list(alphabet,str,False):
         return None
-    candidates=(delete_letter(word)+add_letter(word,alphabet)+
-                replace_letter(word,alphabet)+swap_adjacent(word))
-    for version in candidates:
-        if candidates.count(version)>1:
-            for n in range(candidates.count(version)-1):
-                candidates.remove(version)
-    return candidates
+    candidates=[]
+    candidates.extend(delete_letter(word))
+    candidates.extend(add_letter(word,alphabet))
+    candidates.extend(replace_letter(word,alphabet))
+    candidates.extend(swap_adjacent(word))
+    return sorted(set(candidates))
 
 
 
@@ -354,8 +354,17 @@ def propose_candidates(word: str, alphabet: list[str]) -> tuple[str, ...] | None
         return None
     if not check_list(alphabet,str,False):
         return None
-    candidates=tuple(generate_candidates(word,alphabet))
-    return candidates
+    candidates=set()
+    first_candidates=generate_candidates(word,alphabet)
+    if first_candidates is None:
+        return None
+    candidates.update(first_candidates)
+    for token in first_candidates:
+        second_candidates=generate_candidates(token,alphabet)
+        if second_candidates is None:
+            return None
+        candidates.update(second_candidates)
+    return tuple(sorted(candidates))
 
 
 
@@ -384,11 +393,10 @@ def calculate_frequency_distance(
     candidates=propose_candidates(word,alphabet)
     if not candidates:
         return None
-    max_freq=max(frequencies.values())
     result={}
     for version in candidates:
         if version in frequencies:
-            freq_dist=1-(frequencies[version]/max_freq)
+            freq_dist=1-(frequencies[version])
             result[version]=freq_dist
     return result
 
