@@ -127,16 +127,13 @@ def calculate_distance(
         frequency_dist = calculate_frequency_distance(first_token, vocabulary, alphabet)
         return frequency_dist
 
-    distance_functions = {
-        "jaccard": calculate_jaccard_distance,
-        "frequency-based": calculate_frequency_distance,
-        "levenshtein": calculate_levenshtein_distance,
-        "jaro-winkler": calculate_jaro_winkler_distance,
-    }
-
-    distance_func = distance_functions.get(method)
-
-    if distance_func is None:
+    if method == "jaccard":
+        distance_func = calculate_jaccard_distance
+    elif method == "levenshtein":
+        distance_func = calculate_levenshtein_distance
+    elif method == "jaro-winkler":
+        distance_func = calculate_jaro_winkler_distance
+    else:
         return None
 
     sum_distance = {}
@@ -613,8 +610,10 @@ def calculate_jaro_distance(
     In case of corrupt input arguments, None is returned.
     """
     if (not isinstance(token, str) or not isinstance(candidate, str) or
-        not isinstance(matches, int) or matches < 0 or
-        not isinstance(transpositions, int) or transpositions < 0):
+        not isinstance(matches, int) or matches < 0):
+        return None
+
+    if not isinstance(transpositions, int) or transpositions < 0:
         return None
 
     if matches == 0:
