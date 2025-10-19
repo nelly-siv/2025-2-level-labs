@@ -649,7 +649,7 @@ def calculate_jaro_distance(
     if transpositions > matches:
         return None
 
-    jaro = (1/3) * (
+    jaro = (1.0/3.0) * (
         matches / len(token) +
         matches / len(candidate) +
         (matches - transpositions) / matches
@@ -676,34 +676,28 @@ def winkler_adjustment(
 
     In case of corrupt input arguments, None is returned.
     """
-    if not isinstance(token, str) or not isinstance(candidate, str):
+    if (not isinstance(token, str) or not isinstance(candidate, str) or
+        not isinstance(jaro_distance, (int, float)) or
+        not isinstance(prefix_scaling, (int, float)) or
+        prefix_scaling < 0 or prefix_scaling > 0.25 or
+        jaro_distance < 0 or jaro_distance > 1):
         return None
 
-    if not isinstance(jaro_distance, (int, float)) or not isinstance(prefix_scaling, (int, float)):
-        return None
-
-    if jaro_distance < 0 or jaro_distance > 1:
-        return None
-
-    if prefix_scaling < 0 or prefix_scaling > 0.25:
+    if isinstance(prefix_scaling,bool) or isinstance(jaro_distance,bool):
         return None
 
     if token == candidate:
         return 0.0
 
-    max_prefix_length = 4
     same_prefix = 0
 
-    for i in range(min(len(token), len(candidate), max_prefix_length)):
+    for i in range(min(len(token), len(candidate), 4)):
         if token[i] == candidate[i]:
             same_prefix += 1
         else:
             break
 
-    jaro_sim = 1.0 - jaro_distance
-    adjustment = same_prefix * prefix_scaling * jaro_sim
-
-    return min(adjustment, 0.4)
+    return same_prefix * prefix_scaling * jaro_distance
 
 
 def calculate_jaro_winkler_distance(
@@ -736,9 +730,6 @@ def calculate_jaro_winkler_distance(
     match_distance = max(len(token), len(candidate)) // 2 - 1
     match_distance = max(match_distance, 0)
 
-    if match_distance < 0:
-        match_distance = 0
-
     match_result = get_matches(token, candidate, match_distance)
 
     if match_result is None:
@@ -764,6 +755,6 @@ def calculate_jaro_winkler_distance(
     if adjustment is None:
         return None
 
-    final_distance = jaro_distance - adjustment
+    jaro_winkler_dist = jaro_distance - adjustment
 
-    return max(0.0, min(1.0, final_distance))
+    return round(jaro_winkler_dist,4)
