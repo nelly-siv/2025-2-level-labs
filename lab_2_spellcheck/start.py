@@ -35,8 +35,6 @@ def main() -> None:
     no_stop_words = remove_stop_words(tokens, stop_words) or []
     voc = build_vocabulary(no_stop_words) or {}
 
-    print(voc)
-
     tokens_in_sentences = []
 
     for sentence in sentences:
@@ -48,8 +46,7 @@ def main() -> None:
 
     print(aliens)
 
-    alphabet = ["а","б","в","г","д","е","ё","ж","з","и","й","к","л","м","н","о",
-           "п","р","с","т","у","ф","х","ц","ч","ш","щ","ъ","ы","ь","э","ю","я"]
+    alphabet = [chr(i) for i in range (1072, 1104)]
 
     sum_results = {}
 
