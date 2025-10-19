@@ -719,10 +719,9 @@ def calculate_jaro_winkler_distance(
 
     In case of corrupt input arguments or corrupt outputs of used functions, None is returned.
     """
-    if not isinstance(token, str) or not isinstance(candidate, str):
-        return None
-
-    if not (prefix_scaling, float) or prefix_scaling < 0 or prefix_scaling > 1:
+    if (not isinstance(token, str) or not isinstance(candidate, str)
+        or not (prefix_scaling, (int, float))
+        or prefix_scaling <0 or prefix_scaling > 0.25):
         return None
 
     if not token and not candidate:
@@ -732,6 +731,10 @@ def calculate_jaro_winkler_distance(
         return 1.0
 
     match_distance = max(len(token), len(candidate)) // 2 - 1
+
+    if match_distance < 0:
+        match_distance = 0
+
     match_result = get_matches(token, candidate, match_distance)
 
     if match_result is None:
