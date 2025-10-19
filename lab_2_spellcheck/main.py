@@ -688,6 +688,9 @@ def winkler_adjustment(
     if prefix_scaling < 0 or prefix_scaling > 0.25:
         return None
 
+    if token == candidate:
+        return 0.0
+
     max_prefix_length = 4
     same_prefix = 0
 
@@ -720,17 +723,18 @@ def calculate_jaro_winkler_distance(
     In case of corrupt input arguments or corrupt outputs of used functions, None is returned.
     """
     if (not isinstance(token, str) or not isinstance(candidate, str)
-        or not (prefix_scaling, (int, float))
-        or prefix_scaling <0 or prefix_scaling > 0.25):
+        or not isinstance(prefix_scaling, (int, float))
+        or prefix_scaling < 0 or prefix_scaling > 0.25):
         return None
 
     if not token and not candidate:
-        return 0.0
+        return 1.0
 
     if not token or not candidate:
         return 1.0
 
     match_distance = max(len(token), len(candidate)) // 2 - 1
+    match_distance = max(match_distance, 0)
 
     if match_distance < 0:
         match_distance = 0
