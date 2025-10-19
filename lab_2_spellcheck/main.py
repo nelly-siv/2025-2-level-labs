@@ -610,8 +610,8 @@ def count_transpositions(
 
     transpositions = 0
 
-    for k,symbol in enumerate(token_matched_letters):
-        if symbol != candidate_matched_letters[k]:
+    for k,char in enumerate(token_matched_letters):
+        if char != candidate_matched_letters[k]:
             transpositions += 1
 
     return transpositions // 2
@@ -678,8 +678,10 @@ def winkler_adjustment(
     """
     if (not isinstance(token, str) or not isinstance(candidate, str) or
         not isinstance(jaro_distance, (int, float)) or
-        not isinstance(prefix_scaling, (int, float)) or
-        prefix_scaling < 0 or prefix_scaling > 0.25 or
+        not isinstance(prefix_scaling,(int,float))):
+        return None
+
+    if (prefix_scaling < 0 or prefix_scaling > 0.25 or
         jaro_distance < 0 or jaro_distance > 1):
         return None
 
