@@ -172,12 +172,11 @@ class TextProcessor:
         """
         if (not isinstance(element, str) or
             len(element) != 1):
-            return None
+            return
 
         if element not in self._storage:
             self._storage[element] = len(self._storage)
 
-        return None
 
     def decode(self, encoded_corpus: tuple[int, ...]) -> str | None:
         """
@@ -352,14 +351,16 @@ class NGramLanguageModel:
 
         for n_gram in corpus:
             abs_freq[n_gram] = abs_freq.get(n_gram, 0) + 1
-            prefix_freq[n_gram[:-1]] = prefix_freq.get(n_gram[:-1], 0) + 1
+            prefix = n_gram[:-1]
+            prefix_freq[prefix] = prefix_freq.get(prefix, 0) + 1
 
         for key, value in abs_freq.items():
-            prefix_count = prefix_freq.get(n_gram[:-1], 0)
+            prefix = key[:-1]
+            prefix_count = prefix_freq.get(prefix, 0)
             if prefix_count == 0:
                 return 1
 
-            self._n_gram_frequencies[key] = value / prefix_count
+            self._n_gram_frequencies[key] = round(value / prefix_count, 10)
         return 0
 
 
@@ -388,10 +389,13 @@ class NGramLanguageModel:
         tokens = {}
 
         for n_gram, freq in self._n_gram_frequencies.items():
-            if n_gram[:len(context)] == context:
+            if n_gram[:context_len] == context:
                 token = n_gram[-1]
                 tokens [token] = freq
 
+        if not tokens:
+            return None
+        
         return tokens
 
     def _extract_n_grams(
@@ -412,7 +416,7 @@ class NGramLanguageModel:
             return None
 
         if len(encoded_corpus) < self._n_gram_size:
-            return tuple()
+            return None
 
         main_list = []
 
