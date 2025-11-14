@@ -26,6 +26,7 @@ class TextProcessor:
         """
         self._end_of_word_token = end_of_word_token
         self._storage = {}
+        self._storage[end_of_word_token] = 0
 
     def _tokenize(self, text: str) -> tuple[str, ...] | None:
         """
@@ -170,9 +171,6 @@ class TextProcessor:
         if (not isinstance(element, str) or
             len(element) != 1):
             return
-
-        if self._end_of_word_token not in self._storage:
-            self._storage[self._end_of_word_token] = 0
 
         if element in self._storage:
             return
@@ -404,6 +402,9 @@ class NGramLanguageModel:
         if not encoded_corpus or not isinstance(encoded_corpus, tuple):
             return None
 
+        if len(encoded_corpus) < self._n_gram_size:
+            return None
+
         main_list = []
 
         for element_ind in range (len(encoded_corpus) - self._n_gram_size + 1):
@@ -456,12 +457,14 @@ class GreedyTextGenerator:
         encoded_text = self._text_processor.encode(prompt)
         if encoded_text is None:
             return None
+
         current_sequence = list(encoded_text)
 
         for _ in range(seq_len):
             next_tokens = self._model.generate_next_token(tuple(current_sequence))
             if not next_tokens:
-                return None
+                decoded_text = self._text_processor.decode(tuple(current_sequence))
+                return decoded_text
 
             next_token = list(next_tokens.keys())[0]
 
