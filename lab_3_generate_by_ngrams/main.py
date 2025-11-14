@@ -7,6 +7,8 @@ Beam-search and natural language generation evaluation
 # pylint:disable=too-few-public-methods, unused-import
 import json
 
+from lab_1_keywords_tfidf.main import check_dict
+
 
 class TextProcessor:
     """
@@ -25,7 +27,7 @@ class TextProcessor:
             end_of_word_token (str): A token denoting word boundary
         """
         self._end_of_word_token = end_of_word_token
-        self._storage = {}
+        self._storage = {self._end_of_word_token: 0}
 
     def _tokenize(self, text: str) -> tuple[str, ...] | None:
         """
@@ -140,8 +142,8 @@ class TextProcessor:
         if not text or not isinstance(text, str):
             return None
 
-        tokens = self._tokenize(text)
-        if tokens is None:
+        tokens = self._tokenize(text) or []
+        if not tokens:
             return None
 
         encoded_tokens = []
@@ -170,13 +172,12 @@ class TextProcessor:
         """
         if (not isinstance(element, str) or
             len(element) != 1):
-            return
-
-        if self._end_of_word_token not in self._storage:
-            self._storage[self._end_of_word_token] = 0
+            return None
 
         if element not in self._storage:
             self._storage[element] = len(self._storage)
+
+        return None
 
     def decode(self, encoded_corpus: tuple[int, ...]) -> str | None:
         """
@@ -201,7 +202,11 @@ class TextProcessor:
         if decoded_corpus is None:
             return None
 
-        return self._postprocess_decoded_text(decoded_corpus)
+        result = self._postprocess_decoded_text(decoded_corpus)
+        if result is None:
+            return None
+
+        return str(result)
 
     def fill_from_ngrams(self, content: dict) -> None:
         """
@@ -317,7 +322,11 @@ class NGramLanguageModel:
         Args:
             frequencies (dict): Computed in advance frequencies for n-grams
         """
+        if not frequencies or not check_dict(frequencies, dict, float, True):
+            return None
+
         self._n_gram_frequencies = frequencies
+        return None
 
     def build(self) -> int:  # type: ignore[empty-body]
         """
@@ -331,8 +340,10 @@ class NGramLanguageModel:
         In case of corrupt input arguments or methods used return None,
         1 is returned
         """
+        if not isinstance(self._encoded_corpus, tuple) or not self._encoded_corpus:
+            return 1
         corpus = self._extract_n_grams(self._encoded_corpus)
-        if not corpus or not isinstance(corpus, tuple):
+        if not corpus:
             return 1
 
         abs_freq = {}
@@ -344,7 +355,11 @@ class NGramLanguageModel:
             prefix_freq[n_gram[:-1]] = prefix_freq.get(n_gram[:-1], 0) + 1
 
         for key, value in abs_freq.items():
-            self._n_gram_frequencies[key] = round((value / prefix_freq[key[:-1]]), 10)
+            prefix_count = prefix_freq.get(n_gram[:-1], 0)
+            if prefix_count == 0:
+                return 1
+
+            self._n_gram_frequencies[key] = value / prefix_count
         return 0
 
 
@@ -373,18 +388,11 @@ class NGramLanguageModel:
         tokens = {}
 
         for n_gram, freq in self._n_gram_frequencies.items():
-            if n_gram[:context_len] == context:
+            if n_gram[:len(context)] == context:
                 token = n_gram[-1]
                 tokens [token] = freq
 
-        if not tokens:
-            return None
-
-        sorted_tokens = dict (
-            sorted(tokens.items(), key=lambda x: (-x[1], -x[0]))
-        )
-
-        return sorted_tokens
+        return tokens
 
     def _extract_n_grams(
         self, encoded_corpus: tuple[int, ...]
@@ -404,16 +412,13 @@ class NGramLanguageModel:
             return None
 
         if len(encoded_corpus) < self._n_gram_size:
-            return None
+            return tuple()
 
         main_list = []
 
         for i in range (len(encoded_corpus) - self._n_gram_size + 1):
             n_gram = encoded_corpus[i:i + self._n_gram_size]
             main_list.append(n_gram)
-
-        if not main_list:
-            return None
 
         return tuple(main_list)
 
@@ -452,7 +457,7 @@ class GreedyTextGenerator:
         None is returned
         """
         if (not isinstance(seq_len, int) or not prompt or
-            not isinstance(prompt, str)):
+            not isinstance(prompt, str) or seq_len <= 0):
             return None
 
         encoded_text = self._text_processor.encode(prompt)
@@ -464,12 +469,12 @@ class GreedyTextGenerator:
         for _ in range(seq_len):
             next_tokens = self._model.generate_next_token(tuple(current_sequence))
             if not next_tokens:
-                decoded_text = self._text_processor.decode(tuple(current_sequence))
-                return decoded_text
+                break
 
-            next_token = list(next_tokens.keys())[0]
+            best_token = sorted(next_tokens.items(), key=lambda x:
+                                (x[1], x[0]), reverse = True)[0][0]
 
-            current_sequence.append(next_token)
+            current_sequence.append(best_token)
 
         decoded_text = self._text_processor.decode(tuple(current_sequence))
         return decoded_text
