@@ -26,7 +26,6 @@ class TextProcessor:
         """
         self._end_of_word_token = end_of_word_token
         self._storage = {}
-        self._storage[end_of_word_token] = 0
 
     def _tokenize(self, text: str) -> tuple[str, ...] | None:
         """
@@ -156,6 +155,7 @@ class TextProcessor:
 
             encoded_tokens.append(token_id)
 
+
         return tuple(encoded_tokens)
 
     def _put(self, element: str) -> None:
@@ -172,10 +172,11 @@ class TextProcessor:
             len(element) != 1):
             return
 
-        if element in self._storage:
-            return
+        if self._end_of_word_token not in self._storage:
+            self._storage[self._end_of_word_token] = 0
 
-        self._storage[element] = len(self._storage)
+        if element not in self._storage:
+            self._storage[element] = len(self._storage)
 
     def decode(self, encoded_corpus: tuple[int, ...]) -> str | None:
         """
@@ -407,8 +408,8 @@ class NGramLanguageModel:
 
         main_list = []
 
-        for element_ind in range (len(encoded_corpus) - self._n_gram_size + 1):
-            n_gram = encoded_corpus[element_ind: element_ind + self._n_gram_size]
+        for i in range (len(encoded_corpus) - self._n_gram_size + 1):
+            n_gram = encoded_corpus[i:i + self._n_gram_size]
             main_list.append(n_gram)
 
         if not main_list:
@@ -491,6 +492,8 @@ class BeamSearcher:
             beam_width (int): Number of candidates to consider at each step
             language_model (NGramLanguageModel): A language model to use for next token prediction
         """
+        self._beam_width = beam_width
+        self._model = language_model
 
     def get_next_token(self, sequence: tuple[int, ...]) -> list[tuple[int, float]] | None:
         """
