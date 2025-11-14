@@ -345,7 +345,7 @@ class NGramLanguageModel:
             prefix_freq[n_gram[:-1]] = prefix_freq.get(n_gram[:-1], 0) + 1
 
         for key, value in abs_freq.items():
-            self._n_gram_frequencies[key] = value / prefix_freq[key[:-1]]
+            self._n_gram_frequencies[key] = round((value / prefix_freq[key[:-1]]), 10)
         return 0
 
 
@@ -432,7 +432,7 @@ class GreedyTextGenerator:
             language_model (NGramLanguageModel): A language model to use for text generation
             text_processor (TextProcessor): A TextProcessor instance to handle text processing
         """
-        self._lang_model = language_model
+        self._model = language_model
         self._text_processor = text_processor
 
     def run(self, seq_len: int, prompt: str) -> str | None:
@@ -459,7 +459,7 @@ class GreedyTextGenerator:
         current_sequence = list(encoded_text)
 
         for _ in range(seq_len):
-            next_tokens = self._lang_model.generate_next_token(tuple(current_sequence))
+            next_tokens = self._model.generate_next_token(tuple(current_sequence))
             if not next_tokens:
                 return None
 
