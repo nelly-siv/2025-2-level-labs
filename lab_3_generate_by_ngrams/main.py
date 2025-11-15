@@ -27,7 +27,8 @@ class TextProcessor:
             end_of_word_token (str): A token denoting word boundary
         """
         self._end_of_word_token = end_of_word_token
-        self._storage = {self._end_of_word_token: 0}
+        self._storage = {}
+        self._put(end_of_word_token)
 
     def _tokenize(self, text: str) -> tuple[str, ...] | None:
         """
@@ -321,11 +322,10 @@ class NGramLanguageModel:
         Args:
             frequencies (dict): Computed in advance frequencies for n-grams
         """
-        if not frequencies or not check_dict(frequencies, dict, float, True):
-            return None
+        if not check_dict(frequencies, dict, float, True):
+            return
 
         self._n_gram_frequencies = frequencies
-        return None
 
     def build(self) -> int:  # type: ignore[empty-body]
         """
@@ -475,8 +475,8 @@ class GreedyTextGenerator:
             if not next_tokens:
                 break
 
-            best_token = sorted(next_tokens.items(), key=lambda x:
-                                (x[1], x[0]), reverse = True)[0][0]
+            best_token = max(next_tokens.items(), key=lambda x:
+                                (x[1], -x[0]))[0]
 
             current_sequence.append(best_token)
 
