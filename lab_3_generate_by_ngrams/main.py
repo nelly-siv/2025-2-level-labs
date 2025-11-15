@@ -27,7 +27,7 @@ class TextProcessor:
             end_of_word_token (str): A token denoting word boundary
         """
         self._end_of_word_token = end_of_word_token
-        self._storage = {}
+        self._storage = {self._end_of_word_token: 0}
 
     def _tokenize(self, text: str) -> tuple[str, ...] | None:
         """
@@ -169,9 +169,6 @@ class TextProcessor:
         if (not isinstance(element, str) or
             len(element) != 1):
             return
-
-        if self._end_of_word_token not in self._storage:
-            self._storage[self._end_of_word_token] = 0
 
         if element in self._storage:
             return
