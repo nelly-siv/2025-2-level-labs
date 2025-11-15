@@ -59,10 +59,6 @@ class TextProcessor:
             if letter.isalpha():
                 tokens.append(letter)
                 check_if_letter = True
-            elif letter.isspace():
-                if check_if_letter:
-                    tokens.append(self._end_of_word_token)
-                    check_if_letter = False
             else:
                 if check_if_letter:
                     tokens.append(self._end_of_word_token)
@@ -71,7 +67,7 @@ class TextProcessor:
         if check_if_letter:
             tokens.append(self._end_of_word_token)
 
-        if not any(token.isalpha() for token in tokens):
+        if not any(t.isalpha() for t in tokens):
             return None
 
         return tuple(tokens)
