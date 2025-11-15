@@ -28,7 +28,6 @@ class TextProcessor:
         """
         self._end_of_word_token = end_of_word_token
         self._storage = {}
-        self._put(end_of_word_token)
 
     def _tokenize(self, text: str) -> tuple[str, ...] | None:
         """
@@ -171,8 +170,13 @@ class TextProcessor:
             len(element) != 1):
             return
 
-        if element not in self._storage:
-            self._storage[element] = len(self._storage)
+        if self._end_of_word_token not in self._storage:
+            self._storage[self._end_of_word_token] = 0
+
+        if element in self._storage:
+            return
+
+        self._storage[element] = len(self._storage)
 
 
     def decode(self, encoded_corpus: tuple[int, ...]) -> str | None:
@@ -318,7 +322,7 @@ class NGramLanguageModel:
         Args:
             frequencies (dict): Computed in advance frequencies for n-grams
         """
-        if not check_dict(frequencies, dict, float, True):
+        if not frequencies or not check_dict(frequencies, dict, float, True):
             return
 
         self._n_gram_frequencies = frequencies
@@ -471,9 +475,8 @@ class GreedyTextGenerator:
             if not next_tokens:
                 break
 
-            best_token = max(next_tokens.items(), key=lambda x:
-                                (x[1], -x[0]))[0]
-
+            best_token = sorted(next_tokens.items(), key=lambda x: (-x[1], x[0]))[0][0]
+            
             current_sequence.append(best_token)
 
         decoded_text = self._text_processor.decode(tuple(current_sequence))
