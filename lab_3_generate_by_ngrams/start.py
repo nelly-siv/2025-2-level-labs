@@ -18,15 +18,13 @@ def main() -> None:
         text = text_file.read()
 
     text_processor = TextProcessor('_')
-    encoded_text = text_processor.encode(text)
+    encoded_text = text_processor.encode(text) or tuple()
     language_model = NGramLanguageModel(encoded_text, 7)
-    build_result = language_model.build()
-    text_generator = GreedyTextGenerator(language_model, text_processor)
+    language_model.build()
+    text_generator = GreedyTextGenerator(language_model, text_processor).run(51, 'Vernon')
     prompt = 'Vernon'
-    seq_len = 51
-    generated_text = text_generator.run(seq_len, prompt)
-    print(generated_text)
-    result = generated_text
+    print(text_generator)
+    result = text_generator
     assert result
 
 if __name__ == "__main__":

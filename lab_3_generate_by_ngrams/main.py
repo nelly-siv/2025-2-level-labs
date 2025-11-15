@@ -395,7 +395,7 @@ class NGramLanguageModel:
 
         if not tokens:
             return None
-        
+
         return tokens
 
     def _extract_n_grams(
@@ -421,7 +421,7 @@ class NGramLanguageModel:
         main_list = []
 
         for i in range (len(encoded_corpus) - self._n_gram_size + 1):
-            n_gram = encoded_corpus[i:i + self._n_gram_size]
+            n_gram = tuple(encoded_corpus[i:i + self._n_gram_size])
             main_list.append(n_gram)
 
         return tuple(main_list)
