@@ -119,9 +119,11 @@ class TextProcessor:
             element_id not in set(self._storage.values())):
             return None
 
-        for element, id in self._storage.items():
-            if id == element_id:
+        for element, ind in self._storage.items():
+            if ind == element_id:
                 return element
+
+        return None
 
     def encode(self, text: str) -> tuple[int, ...] | None:
         """
@@ -180,7 +182,6 @@ class TextProcessor:
         if element not in self._storage:
             self._storage[element] = len(self._storage)
 
-        return None
 
     def decode(self, encoded_corpus: tuple[int, ...]) -> str | None:
         """
@@ -244,8 +245,8 @@ class TextProcessor:
 
         decoded_tokens = []
 
-        for id in corpus:
-            token = self.get_token(id)
+        for ind in corpus:
+            token = self.get_token(ind)
             if token is None:
                 return None
 
@@ -541,6 +542,10 @@ class BeamSearcher:
             return None
 
         next_tokens = self._model.generate_next_token(sequence)
+        if next_tokens is None:
+            return None
+        if next_tokens == {}:
+            return []
         if not next_tokens:
             return []
 
@@ -676,24 +681,34 @@ class BeamSearchTextGenerator:
 
         for _ in range(seq_len):
             new_candidates = {}
+            has_valid_candidates = False
+
             for sequence, score in sequence_candidates.items():
                 next_tokens = self._get_next_token(sequence)
+                if next_tokens is None:
+                    return None
                 if not next_tokens:
                     new_candidates[sequence] = score
                     continue
 
-                for token, prob in next_tokens:
-                    if prob <= 0:
-                        continue
-                    new_sequence = sequence + (token,)
-                    new_score = score - math.log(prob)
-                    new_candidates[new_sequence] = new_score
+                temp_candidates = {sequence: score}
+                continued_candidates = self.beam_searcher.continue_sequence(
+                sequence, next_tokens, temp_candidates
+                )
+                if continued_candidates is None:
+                    new_candidates[sequence] = score
+                else:
+                    new_candidates.update(continued_candidates)
+                    has_valid_candidates = True
 
             if not new_candidates:
                 break
-            sorted_candidates = sorted(new_candidates.items(),
-                                 key=lambda x: x[1])[:self._beam_width]
-            sequence_candidates = dict(sorted_candidates)
+
+            pruned_candidates = self.beam_searcher.prune_sequence_candidates(new_candidates)
+            if pruned_candidates is None:
+                return None
+
+            sequence_candidates = pruned_candidates
 
         if not sequence_candidates:
             return None
@@ -767,6 +782,8 @@ class NGramLanguageModelReader:
 
         n_grams = {}
         eow_id = self._text_processor.get_id(self._eow_token)
+        if eow_id is None:
+            return None
 
         for ngram, freq in self._content['freq'].items():
             processed_elements = []
