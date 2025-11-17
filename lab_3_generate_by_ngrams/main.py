@@ -681,7 +681,6 @@ class BeamSearchTextGenerator:
 
         for _ in range(seq_len):
             new_candidates = {}
-            has_valid_candidates = False
 
             for sequence, score in sequence_candidates.items():
                 next_tokens = self._get_next_token(sequence)
@@ -699,7 +698,6 @@ class BeamSearchTextGenerator:
                     new_candidates[sequence] = score
                 else:
                     new_candidates.update(continued_candidates)
-                    has_valid_candidates = True
 
             if not new_candidates:
                 break
