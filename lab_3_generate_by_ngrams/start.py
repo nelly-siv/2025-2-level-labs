@@ -25,18 +25,17 @@ def main() -> None:
         text = text_file.read()
 
     text_processor = TextProcessor('_')
-    encoded_text = text_processor.encode(text) or tuple()
-    decoded_text = text_processor.decode(encoded_text)
-    print(decoded_text)
+    encoded = text_processor.encode(text) or tuple()
+    decoded = text_processor.decode(encoded)
+    print(decoded)
 
-    language_model = NGramLanguageModel(encoded_text, 7)
-    language_model.build()
-    greedy_generator = GreedyTextGenerator(language_model, text_processor).run(51, 'Vernon')
+    main_model = NGramLanguageModel(encoded, 7)
+    main_model.build()
+    greedy_generator = GreedyTextGenerator(main_model, text_processor).run(51, 'Vernon')
     print(f"With greedy: {greedy_generator}")
 
-    beam_search_generator = BeamSearchTextGenerator(language_model, text_processor, 3)
-    beam_search_result = beam_search_generator.run("Vernon", 56)
-    print(f"With beam search: {beam_search_result}")
+    beam_search_generator = BeamSearchTextGenerator(main_model, text_processor, 3).run('Vernon', 56)
+    print(f"With beam search: {beam_search_generator}")
 
     models = []
     reader = NGramLanguageModelReader("./assets/en_own.json", "_")
