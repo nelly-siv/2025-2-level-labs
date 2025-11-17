@@ -39,13 +39,16 @@ def main() -> None:
     print(f"With beam search: {beam_search_result}")
 
     models = []
+    reader = NGramLanguageModelReader("./assets/en_own.json", "_")
     for n_gram_size in [2, 3, 4]:
-        model = NGramLanguageModelReader("./assets/en_own.json", "_").load(n_gram_size)
+        model = reader.load(n_gram_size)
         if model is not None:
             models.append(model)
-    back_off_algorithm = BackOffGenerator(tuple(models), text_processor).run(60, 'Vernon')
-    print(f"With Back off: {back_off_algorithm}")
-    result = back_off_algorithm
+            test_tokens = model.generate_next_token((1,))
+            print(f"Loaded n_gram_size {n_gram_size} generated {bool(test_tokens)}")
+    back_off_generator = BackOffGenerator(tuple(models), text_processor).run(58, 'Vernon')
+    print(f"With Back off: {back_off_generator}")
+    result = back_off_generator
     assert result
 
 if __name__ == "__main__":
