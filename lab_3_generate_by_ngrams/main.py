@@ -138,27 +138,6 @@ class TextProcessor:
             return None
         return tuple(list_with_id)
 
-        if not isinstance(text, str):
-            return None
-
-        tokens = self._tokenize(text)
-        if tokens is None:
-            return None
-
-        encoded_tokens = []
-
-        for element in tokens:
-            if element not in self._storage:
-                self._put(element)
-
-            token_id = self.get_id(element)
-            if token_id is None:
-                return None
-
-            encoded_tokens.append(token_id)
-
-        return tuple(encoded_tokens)
-
     def _put(self, element: str) -> None:
         """
         Put an element into the storage, assign a unique id to it.
@@ -387,16 +366,6 @@ class NGramLanguageModel:
             result.append(tuple(n_gram))
         return tuple(result)
 
-        if len(encoded_corpus) < self._n_gram_size:
-            return tuple()
-
-        main_list = []
-
-        for i in range (len(encoded_corpus) - self._n_gram_size + 1):
-            n_gram = tuple(encoded_corpus[i:i + self._n_gram_size])
-            main_list.append(n_gram)
-
-        return tuple(main_list)
 
 class GreedyTextGenerator:
     """
