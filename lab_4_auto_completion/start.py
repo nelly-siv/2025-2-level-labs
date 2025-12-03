@@ -5,6 +5,7 @@ Auto-completion start
 # pylint:disable=unused-variable
 from lab_4_auto_completion.main import DecodingError, PrefixTrie, WordProcessor
 
+
 def main() -> None:
     """
     Launches an implementation.

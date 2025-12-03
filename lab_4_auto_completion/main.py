@@ -4,7 +4,6 @@ Lab 4
 
 # pylint: disable=unused-argument, super-init-not-called, unused-private-member, duplicate-code, unused-import
 import json
-import os
 
 from lab_3_generate_by_ngrams.main import BackOffGenerator, NGramLanguageModel, TextProcessor
 
