@@ -5,12 +5,7 @@ Lab 4
 # pylint: disable=unused-argument, super-init-not-called, unused-private-member, duplicate-code, unused-import
 import json
 
-from lab_3_generate_by_ngrams.main import (
-    BackOffGenerator,
-    NGramLanguageModel,
-    TextProcessor
-)
-
+from lab_3_generate_by_ngrams.main import BackOffGenerator, NGramLanguageModel, TextProcessor
 
 NGramType = tuple[int, ...]
 "Type alias for NGram."
@@ -91,7 +86,6 @@ class WordProcessor(TextProcessor):
         for token in tokens:
             self._put(token)
             current_sentence.append(self._storage[token])
-
             if token == self._end_of_sentence_token:
                 if current_sentence:
                     encoded_sentence.append(tuple(current_sentence))
@@ -177,7 +171,6 @@ class WordProcessor(TextProcessor):
             raise EncodingError("Invalid input: text must be a non-empty string")
 
         words = text.lower().split()
-
         tokens = []
 
         for word in words:
@@ -354,15 +347,12 @@ class PrefixTrie:
 
         for item in prefix:
             found_child = None
-
             for child in current_node.get_children():
                 if child.get_name() == item:
                     found_child = child
                     break
-
             if found_child is None:
                 raise TriePrefixNotFoundError(f"Prefix {prefix} not found in trie")
-
             current_node = found_child
 
         return current_node
@@ -380,7 +370,6 @@ class PrefixTrie:
         """
         try:
             node = self.get_prefix(prefix)
-
         except TriePrefixNotFoundError:
             return tuple()
 
@@ -392,12 +381,10 @@ class PrefixTrie:
             current_node, current_sequence = rank.pop(0)
             if current_node.has_children():
                 children = list(current_node.get_children())
-
                 for child in children:
                     child_name = child.get_name()
                     if child_name is None:
                         continue
-
                     next_sequence = current_sequence + (child_name,)
                     results.append(next_sequence)
                     rank.append((child, next_sequence))
@@ -417,12 +404,10 @@ class PrefixTrie:
         for element in sequence:
             children = current_node.get_children()
             child_node = None
-
             for child in children:
                 if child.get_name() == element:
                     child_node = child
                     break
-
             if child_node is None:
                 current_node.add_child(element)
                 upd_children = current_node.get_children()
@@ -431,7 +416,6 @@ class PrefixTrie:
                     if child.get_name() == element:
                         child_node = child
                         break
-
             if child_node is not None:
                 current_node = child_node
 
@@ -482,18 +466,13 @@ class NGramTrieLanguageModel(PrefixTrie, NGramLanguageModel):
             for i in range(len(sentence) - self._n_gram_size + 1):
                 ngram = tuple(sentence[i:i + self._n_gram_size])
                 all_ngrams.append(ngram)
-
         try:
             for ngram in all_ngrams:
                 self._insert(ngram)
-
             final_ngrams = self._collect_all_ngrams()
             self._fill_frequencies(final_ngrams)
-
             return 0
-
         except TriePrefixNotFoundError:
-
             return 1
 
     def get_next_tokens(self, start_sequence: NGramType) -> dict[int, float]:
@@ -541,10 +520,8 @@ class NGramTrieLanguageModel(PrefixTrie, NGramLanguageModel):
             return None
 
         context = sequence[:self._n_gram_size - 1]
-
         try:
             generating_next_token = self.get_next_tokens(context)
-
         except TriePrefixNotFoundError:
             return {}
 
@@ -596,20 +573,16 @@ class NGramTrieLanguageModel(PrefixTrie, NGramLanguageModel):
         all_ngrams = []
 
         rank = [(self._root, [])]
-
         while rank:
             node, current_path = rank.pop()
             node_name = node.get_name()
-
             if node_name is not None:
                 new_path = current_path + [node_name]
             else:
                 new_path = current_path
-
             if len(new_path) == self._n_gram_size:
                 all_ngrams.append(tuple(new_path))
                 continue
-
             for child in node.get_children():
                 rank.append((child, new_path))
 
@@ -631,7 +604,6 @@ class NGramTrieLanguageModel(PrefixTrie, NGramLanguageModel):
             token = child_node.get_name()
             if not token:
                 continue
-
             frequency = child_node.get_value()
             freq_dict[token] = frequency
 
@@ -655,11 +627,9 @@ class NGramTrieLanguageModel(PrefixTrie, NGramLanguageModel):
 
         for ngram, count in ngram_count.items():
             relative_freq = count / total_ngrams
-
             try:
                 node = self.get_prefix(ngram)
                 node.set_value(relative_freq)
-
             except TriePrefixNotFoundError:
                 continue
 
@@ -716,13 +686,10 @@ class DynamicNgramLMTrie(NGramTrieLanguageModel):
             result = model.build()
             if result != 0:
                 return 1
-
             self._models[ngram_size] = model
-
         try:
             self._merge()
             return 0
-
         except MergeTreesError:
             return 1
 
@@ -760,7 +727,6 @@ class DynamicNgramLMTrie(NGramTrieLanguageModel):
             self._current_n_gram_size = self._max_ngram_size
 
         if self._current_n_gram_size not in self._models:
-
             for n in range(self._max_ngram_size, 1, -1):
                 if n in self._models:
                     self._current_n_gram_size = n
@@ -776,18 +742,15 @@ class DynamicNgramLMTrie(NGramTrieLanguageModel):
 
         context_size = min(self._current_n_gram_size - 1, len(sequence))
         context = sequence[-context_size:]
-
         try:
             prefix_node = self.get_prefix(context)
             result = {}
-
             for child in prefix_node.get_children():
                 child_name = child.get_name()
                 if child_name is not None:
                     result[child_name] = child.get_value()
 
             return result
-
         except TriePrefixNotFoundError:
             return {}
 
@@ -851,10 +814,8 @@ class DynamicNgramLMTrie(NGramTrieLanguageModel):
         while stack:
             source_node, dest_node = stack.pop()
             children = source_node.get_children()
-
             for source_child in children:
                 child_name = source_child.get_name()
-
                 if child_name is not None:
                     dest_child = self._assign_child(dest_node, child_name,
                                                   source_child.get_value())
@@ -902,7 +863,6 @@ class DynamicBackOffGenerator(BackOffGenerator):
         for ngram in ngram_sizes:
             self._dynamic_trie.set_current_ngram_size(ngram)
             next_tokens = self._dynamic_trie.generate_next_token(sequence_to_continue)
-
             if next_tokens:
                 return next_tokens
 
@@ -927,7 +887,6 @@ class DynamicBackOffGenerator(BackOffGenerator):
             or len(prompt) == 0
         ):
             return None
-
         try:
             encoded_seq = self._text_processor.encode(prompt)
         except EncodingError:
