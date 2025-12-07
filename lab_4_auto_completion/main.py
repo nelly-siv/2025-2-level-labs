@@ -58,6 +58,7 @@ class WordProcessor(TextProcessor):
         Args:
             end_of_sentence_token (str): A token denoting sentence boundary
         """
+        TextProcessor.__init__(self, end_of_sentence_token)
         self._end_of_sentence_token = end_of_sentence_token
         self._storage = {end_of_sentence_token: 0}
 
@@ -75,7 +76,7 @@ class WordProcessor(TextProcessor):
         Returns:
             tuple: Tuple of encoded sentences, each as a tuple of word IDs
         """
-        if not isinstance(text, str) or not text:
+        if not isinstance(text, str) or not text.strip():
             raise EncodingError("Invalid input: text must be a non-empty string")
 
         tokens = self._tokenize(text)
@@ -83,15 +84,13 @@ class WordProcessor(TextProcessor):
         encoded_sentence = []
 
         for token in tokens:
+            self._put(token)
+            current_sentence.append(self._storage[token])
+
             if token == self._end_of_sentence_token:
                 if current_sentence:
-                    encoded_sentence.append(tuple(current_sentence) + (0,))
-                    current_sentence = []
-            else:
-                self._put(token)
-                word_index = self._storage.get(token)
-                if word_index is not None:
-                    current_sentence.append(word_index)
+                    encoded_sentence.append(tuple(current_sentence))
+                current_sentence = []
 
         if current_sentence:
             encoded_sentence.append(tuple(current_sentence) + (0,))
@@ -134,34 +133,27 @@ class WordProcessor(TextProcessor):
         """
         if not decoded_corpus or not isinstance(decoded_corpus, tuple):
             raise DecodingError("Invalid input: decoded_corpus must be a non-empty tuple")
+        if all(token == self._end_of_sentence_token for token in decoded_corpus):
+            raise DecodingError('Postprocessing resulted in empty output')
 
-        sentences = []
-        current_sentence = []
+        tokens = list(decoded_corpus)
+        if tokens:
+            tokens[0] = tokens[0].capitalize()
 
-        for element in decoded_corpus:
-            if element == self._end_of_sentence_token:
-                if current_sentence:
-                    sentences.append(" ".join(current_sentence))
-                    current_sentence = []
-            else:
-                current_sentence.append(element)
+        end_token = self.get_end_of_word_token()
+        if end_token in tokens:
+            for index in range(1, len(tokens)):
+                if tokens[index - 1] == end_token:
+                    tokens[index] = tokens[index].capitalize()
 
-        if current_sentence:
-            sentences.append(" ".join(current_sentence))
+        if not tokens:
+            raise DecodingError('Postprocessing resulted in empty output')
 
-        processed_sentences = []
-        for sentence in sentences:
-            if sentence:
-                capitalized = sentence.capitalize()
-                processed_sentences.append(capitalized + ".")
+        text = ' '.join(tokens).replace(' ' + end_token, '.')
+        if text[-1] != '.':
+            text += '.'
 
-        if not processed_sentences:
-            raise DecodingError("Postprocessing resulted in empty output")
-
-        return " ".join(processed_sentences)
-
-
-
+        return text
 
     def _tokenize(self, text: str) -> tuple[str, ...]:
         """
@@ -179,38 +171,16 @@ class WordProcessor(TextProcessor):
         if not text or not isinstance(text, str):
             raise EncodingError("Invalid input: text must be a non-empty string")
 
-        text_lower = text.lower()
-        sentence_endings = ['.', '!', '?']
-
-        for ending in sentence_endings:
-            text_lower = text_lower.replace(ending, '*')
-
-        sentences = text_lower.split('*')
+        words = text.lower().split()
 
         tokens = []
 
-        for sentence in sentences:
-            sentence = sentence.strip()
-            if not sentence:
-                continue
-
-            words = sentence.split()
-            has_words = False
-
-            for word in words:
-                clean_chars = []
-
-                for char in word:
-                    if char.isalpha() or char == '-':
-                        clean_chars.append(char)
-
-                clean_word = ''.join(clean_chars)
-                if clean_word:
-                    tokens.append(clean_word)
-                    has_words = True
-
-            if has_words:
-                tokens.append(self._end_of_sentence_token)
+        for word in words:
+            letters = ''.join(letter for letter in word if letter.isalpha() or letter == '-')
+            if letters:
+                tokens.append(letters)
+                if word and word[-1] in '!?.':
+                    tokens.append(self._end_of_sentence_token)
 
         if not tokens:
             raise EncodingError("Tokenization resulted in empty output")
@@ -404,25 +374,27 @@ class PrefixTrie:
         """
         try:
             node = self.get_prefix(prefix)
+
         except TriePrefixNotFoundError:
-            return []
+            return tuple()
 
         results = []
-        rank = [(node, prefix)]
+        initial_seq = tuple(prefix)
+        rank = [(node, initial_seq)]
+
         while rank:
             current_node, current_sequence = rank.pop(0)
-
             if current_node.has_children():
-                for child in current_node.get_children():
+                children = list(current_node.get_children())
+
+                for child in children:
                     child_name = child.get_name()
                     if child_name is None:
                         continue
 
                     next_sequence = current_sequence + (child_name,)
+                    results.append(next_sequence)
                     rank.append((child, next_sequence))
-            else:
-                if current_sequence != prefix:
-                    results.append(current_sequence)
 
         return tuple(results)
 
@@ -473,6 +445,9 @@ class NGramTrieLanguageModel(PrefixTrie, NGramLanguageModel):
             encoded_corpus (tuple | None): Encoded text
             n_gram_size (int): A size of n-grams to use for language modelling
         """
+        NGramLanguageModel.__init__(self, encoded_corpus, n_gram_size)
+        self._root = TrieNode()
+
 
     def __str__(self) -> str:
         """
@@ -481,6 +456,7 @@ class NGramTrieLanguageModel(PrefixTrie, NGramLanguageModel):
         Returns:
             str: String representation showing n-gram size.
         """
+        return f'NGramTrieLanguageModel({self._n_gram_size})'
 
     def build(self) -> int:
         """
@@ -489,6 +465,29 @@ class NGramTrieLanguageModel(PrefixTrie, NGramLanguageModel):
         Returns:
             int: 0 if attribute is filled successfully, otherwise 1
         """
+        if not self._encoded_corpus:
+            return 1
+
+        self._root = TrieNode()
+        all_ngrams = []
+
+        for sentence in self._encoded_corpus:
+            for i in range(len(sentence) - self._n_gram_size + 1):
+                ngram = tuple(sentence[i:i + self._n_gram_size])
+                all_ngrams.append(ngram)
+
+        try:
+            for ngram in all_ngrams:
+                self._insert(ngram)
+
+            final_ngrams = self._collect_all_ngrams()
+            self._fill_frequencies(final_ngrams)
+
+            return 0
+
+        except:
+
+            return 1
 
     def get_next_tokens(self, start_sequence: NGramType) -> dict[int, float]:
         """
@@ -500,6 +499,11 @@ class NGramTrieLanguageModel(PrefixTrie, NGramLanguageModel):
         Returns:
             dict[int, float]: Mapping of token → relative frequency.
         """
+        node = self.get_prefix(start_sequence)
+        if not node.has_children():
+            return {}
+
+        return self._collect_frequencies(node)
 
     def get_root(self) -> TrieNode:
         """
@@ -507,6 +511,7 @@ class NGramTrieLanguageModel(PrefixTrie, NGramLanguageModel):
         Returns:
             TrieNode: Found root.
         """
+        return self._root
 
     def generate_next_token(self, sequence: NGramType) -> dict[int, float] | None:
         """
@@ -521,6 +526,22 @@ class NGramTrieLanguageModel(PrefixTrie, NGramLanguageModel):
             dict[int, float] | None: Possible next tokens with their probabilities,
                                      or None if input is invalid or context is too short
         """
+        if (
+            not isinstance(sequence, tuple)
+            or not sequence
+            or len(sequence) < (self._n_gram_size - 1)
+        ):
+            return None
+
+        context = sequence[:self._n_gram_size - 1]
+
+        try:
+            generating_next_token = self.get_next_tokens(context)
+
+        except TriePrefixNotFoundError:
+            return {}
+
+        return generating_next_token
 
     def get_n_gram_size(self) -> int:
         """
@@ -529,6 +550,7 @@ class NGramTrieLanguageModel(PrefixTrie, NGramLanguageModel):
         Returns:
             int: The current n-gram size.
         """
+        return self._n_gram_size
 
     def get_node_by_prefix(self, prefix: NGramType) -> TrieNode:
         """
@@ -540,6 +562,7 @@ class NGramTrieLanguageModel(PrefixTrie, NGramLanguageModel):
         Returns:
             TrieNode: Found node by prefix.
         """
+        return self.get_prefix(prefix)
 
     def update(self, new_corpus: tuple[NGramType]) -> None:
         """
@@ -548,6 +571,13 @@ class NGramTrieLanguageModel(PrefixTrie, NGramLanguageModel):
         Args:
             new_corpus (tuple[NGramType]): Additional corpus represented as token sequences.
         """
+        if not isinstance(new_corpus, tuple) or not new_corpus:
+            return None
+
+        if not self._encoded_corpus:
+            self._encoded_corpus = new_corpus
+
+        self.build()
 
     def _collect_all_ngrams(self) -> tuple[NGramType, ...]:
         """
@@ -556,6 +586,27 @@ class NGramTrieLanguageModel(PrefixTrie, NGramLanguageModel):
         Returns:
             tuple[NGramType, ...]: Tuple of all n-grams stored in the trie.
         """
+        all_ngrams = []
+
+        rank = [(self._root, [])]
+
+        while rank:
+            node, current_path = rank.pop()
+            node_name = node.get_name()
+
+            if node_name is not None:
+                new_path = current_path + [node_name]
+            else:
+                new_path = current_path
+
+            if len(new_path) == self._n_gram_size:
+                all_ngrams.append(tuple(new_path))
+                continue
+
+            for child in node.get_children():
+                rank.append((child, new_path))
+
+        return tuple(all_ngrams)
 
     def _collect_frequencies(self, node: TrieNode) -> dict[int, float]:
         """
@@ -567,6 +618,17 @@ class NGramTrieLanguageModel(PrefixTrie, NGramLanguageModel):
         Returns:
             dict[int, float]: Collected frequencies of items.
         """
+        freq_dict = {}
+
+        for child_node in node.get_children():
+            token = child_node.get_name()
+            if not token:
+                continue
+
+            frequency = child_node.get_value()
+            freq_dict[token] = frequency
+
+        return freq_dict
 
     def _fill_frequencies(self, encoded_corpus: tuple[NGramType, ...]) -> None:
         """
@@ -578,6 +640,21 @@ class NGramTrieLanguageModel(PrefixTrie, NGramLanguageModel):
         Args:
             encoded_corpus (tuple[NGramType, ...]): Tuple of n-grams extracted from the corpus.
         """
+        total_ngrams = len(encoded_corpus)
+        ngram_count = {}
+
+        for ngram in encoded_corpus:
+            ngram_count[ngram] = ngram_count.get(ngram, 0) + 1
+
+        for ngram, count in ngram_count.items():
+            relative_freq = count / total_ngrams
+
+            try:
+                node = self.get_prefix(ngram)
+                node.set_value(relative_freq)
+
+            except TriePrefixNotFoundError:
+                continue
 
 
 class DynamicNgramLMTrie(NGramTrieLanguageModel):
@@ -604,6 +681,12 @@ class DynamicNgramLMTrie(NGramTrieLanguageModel):
             encoded_corpus (tuple[NGramType, ...]): Tokenized corpus.
             n_gram_size (int, optional): N-gram size. Defaults to 3.
         """
+        super().__init__(encoded_corpus, n_gram_size)
+        self._root = TrieNode()
+        self._encoded_corpus = encoded_corpus
+        self._current_n_gram_size = 0
+        self._max_ngram_size = n_gram_size
+        self._models = {}
 
     def build(self) -> int:
         """
@@ -612,6 +695,29 @@ class DynamicNgramLMTrie(NGramTrieLanguageModel):
         Returns:
             int: 0 if attribute is filled successfully, otherwise 1.
         """
+        if (
+            not isinstance(self._encoded_corpus, tuple)
+            or not self._encoded_corpus
+            or not isinstance(self._max_ngram_size, int)
+            or self._max_ngram_size < 2
+        ):
+            return 1
+        self._models = {}
+
+        for ngram_size in range(2, self._max_ngram_size + 1):
+            model = NGramTrieLanguageModel(self._encoded_corpus, ngram_size)
+            result = model.build()
+            if result != 0:
+                return 1
+
+            self._models[ngram_size] = model
+
+        try:
+            self._merge()
+            return 0
+
+        except MergeTreesError:
+            return 1
 
     def set_current_ngram_size(self, current_n_gram_size: int | None) -> None:
         """
@@ -620,6 +726,15 @@ class DynamicNgramLMTrie(NGramTrieLanguageModel):
         Args:
             current_n_gram_size (int | None): Current N-gram size for generation.
         """
+        if (
+            not current_n_gram_size
+            or not isinstance(current_n_gram_size, int)
+            or current_n_gram_size < 2
+            or self._max_ngram_size < current_n_gram_size
+        ):
+            raise IncorrectNgramError('Error! Incorrect input data')
+
+        self._current_n_gram_size = current_n_gram_size
 
     def generate_next_token(self, sequence: tuple[int, ...]) -> dict[int, float] | None:
         """
@@ -631,6 +746,43 @@ class DynamicNgramLMTrie(NGramTrieLanguageModel):
         Returns:
             dict[int, float] | None: Possible next tokens with their probabilities.
         """
+        if not (isinstance(sequence, tuple) and sequence):
+            return None
+
+        if not 2 <= self._current_n_gram_size <= self._max_ngram_size:
+            self._current_n_gram_size = self._max_ngram_size
+
+        if self._current_n_gram_size not in self._models:
+
+            for n in range(self._max_ngram_size, 1, -1):
+                if n in self._models:
+                    self._current_n_gram_size = n
+                    break
+            else:
+                return {}
+
+        model = self._models[self._current_n_gram_size]
+        ngram_size = model.get_n_gram_size()
+
+        if len(sequence) < ngram_size - 1:
+            return {}
+
+        context_size = min(self._current_n_gram_size - 1, len(sequence))
+        context = sequence[-context_size:]
+
+        try:
+            prefix_node = self.get_prefix(context)
+            result = {}
+
+            for child in prefix_node.get_children():
+                child_name = child.get_name()
+                if child_name is not None:
+                    result[child_name] = child.get_value()
+
+            return result
+
+        except TriePrefixNotFoundError:
+            return {}
 
     def _assign_child(self, parent: TrieNode, node_name: int, freq: float = 0.0) -> TrieNode:
         """
@@ -644,11 +796,38 @@ class DynamicNgramLMTrie(NGramTrieLanguageModel):
         Returns:
             TrieNode: Existing or new TrieNode.
         """
+        if (
+            node_name is None
+            or not isinstance(node_name, int)
+            or node_name < 0
+        ):
+            raise ValueError('Node name must be non-negative integer')
+
+        for child in parent.get_children():
+
+            if child.get_name() == node_name:
+                if freq != 0.0:
+                    child.set_value(freq)
+                return child
+
+        new_node = TrieNode(name=node_name, value=freq)
+        parent._children.append(new_node)
+
+        return new_node
 
     def _merge(self) -> None:
         """
         Merge all built N-gram trie models into a single unified trie.
         """
+        if not self._models:
+            raise MergeTreesError('No models to merge')
+
+        self._root = TrieNode()
+
+        for n_size in sorted(self._models):
+            model = self._models[n_size]
+            source_root = model._root
+            self._insert_trie(source_root)
 
     def _insert_trie(self, source_root: TrieNode) -> None:
         """
@@ -657,6 +836,22 @@ class DynamicNgramLMTrie(NGramTrieLanguageModel):
         Args:
             source_root (TrieNode): Source root to insert tree
         """
+        if not source_root:
+            return
+
+        stack = [(source_root, self._root)]
+
+        while stack:
+            source_node, dest_node = stack.pop()
+            children = source_node.get_children()
+
+            for source_child in children:
+                child_name = source_child.get_name()
+
+                if child_name is not None:
+                    dest_child = self._assign_child(dest_node, child_name,
+                                                  source_child.get_value())
+                    stack.append((source_child, dest_child))
 
 
 class DynamicBackOffGenerator(BackOffGenerator):
@@ -675,6 +870,8 @@ class DynamicBackOffGenerator(BackOffGenerator):
             dynamic_trie (DynamicNgramLMTrie): Dynamic trie to use for text generation.
             processor (WordProcessor): A WordProcessor instance to handle text processing.
         """
+        BackOffGenerator.__init__(self, (dynamic_trie,), processor)
+        self._dynamic_trie = dynamic_trie
 
     def get_next_token(self, sequence_to_continue: tuple[int, ...]) -> dict[int, float] | None:
         """
@@ -686,6 +883,23 @@ class DynamicBackOffGenerator(BackOffGenerator):
         Returns:
             dict[int, float] | None: Next tokens for sequence continuation
         """
+        if (
+            not isinstance(sequence_to_continue, tuple)
+            or len(sequence_to_continue) == 0
+        ):
+            return None
+
+        max_size = self._dynamic_trie.get_n_gram_size()
+        ngram_sizes = list(range(max_size, 1, -1))
+
+        for ngram in ngram_sizes:
+            self._dynamic_trie.set_current_ngram_size(ngram)
+            next_tokens = self._dynamic_trie.generate_next_token(sequence_to_continue)
+
+            if next_tokens:
+                return next_tokens
+
+        return None
 
     def run(self, seq_len: int, prompt: str) -> str | None:
         """
@@ -698,7 +912,67 @@ class DynamicBackOffGenerator(BackOffGenerator):
         Returns:
             str | None: Generated sequence
         """
+        if (
+            not seq_len
+            or not isinstance(seq_len, int)
+            or seq_len <= 0
+            or not isinstance(prompt, str)
+            or len(prompt) == 0
+        ):
+            return None
 
+        try:
+            encoded_seq = self._text_processor.encode(prompt)
+
+        except (EncodingError, AttributeError):
+            return None
+
+        if not encoded_seq:
+            return None
+
+        tokens = list(encoded_seq)
+        eos_token_id = None
+
+        if hasattr(self._text_processor, '_end_of_word_token'):
+            eos_token_id = self._text_processor._end_of_word_token
+
+        elif hasattr(self._text_processor, '_storage'):
+            for word, word_id in self._text_processor._storage.items():
+                if word == self._text_processor.get_end_of_word_token():
+                    eos_token_id = word_id
+                    break
+
+        if tokens and eos_token_id is not None and tokens[-1] == eos_token_id:
+            tokens.pop()
+
+        for _ in range(seq_len):
+            next_tokens = self.get_next_token(tuple(tokens))
+            if not next_tokens:
+                break
+
+            best_token = max(next_tokens.items(), key=lambda x: (x[1], x[0]))[0]
+            tokens.append(best_token)
+
+        words = []
+
+        if hasattr(self._text_processor, '_storage'):
+            storage = self._text_processor._storage
+
+            for token_id in tokens:
+                for word, word_id in storage.items():
+                    if word_id == token_id:
+                        words.append(word)
+                        break
+
+        if hasattr(self._text_processor, '_postprocess_decoded_text'):
+
+            try:
+                return self._text_processor._postprocess_decoded_text(tuple(words))
+
+            except DecodingError:
+                return ' '.join(words)
+
+        return ' '.join(words)
 
 def save(trie: DynamicNgramLMTrie, path: str) -> None:
     """
@@ -708,6 +982,34 @@ def save(trie: DynamicNgramLMTrie, path: str) -> None:
         trie (DynamicNgramLMTrie): Trie for saving
         path (str): Path for saving
     """
+    if not isinstance(path, str) or not path:
+        raise ValueError('Invalid path')
+
+    data = {
+    'value': trie.get_root().get_name(),
+    'freq': trie.get_root().get_value(),
+    'children': []
+    }
+
+    stack = [(trie.get_root(), data['children'])]
+
+    while stack:
+        current_node, parent_children_list = stack.pop()
+        children = current_node.get_children()
+
+        for child in children:
+            child_dict = {
+                'value': child.get_name(),
+                'freq': child.get_value(),
+                'children': []
+            }
+            parent_children_list.append(child_dict)
+            stack.append((child, child_dict['children']))
+
+    trie_data = {'trie': data}
+
+    with open(path, 'w', encoding='utf-8') as file:
+        json.dump(trie_data, file, indent=2)
 
 
 def load(path: str) -> DynamicNgramLMTrie:
@@ -720,3 +1022,35 @@ def load(path: str) -> DynamicNgramLMTrie:
     Returns:
         DynamicNgramLMTrie: Trie from file.
     """
+    with open(path, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+
+    trie_data = data.get('trie', {})
+    encoded_corpus = tuple(data.get('encoded_corpus', ()))
+    max_ngram_size = data.get('max_ngram_size', 3)
+    loaded_trie = DynamicNgramLMTrie(encoded_corpus, max_ngram_size)
+    if trie_data:
+        root_node = TrieNode(
+            trie_data.get('value'),
+            trie_data.get('freq', 0.0)
+        )
+
+        stack = [(trie_data, root_node)]
+        while stack:
+            current_data, current_node = stack.pop()
+            children_data = current_data.get('children', [])
+            for child_data in children_data:
+                child_node = TrieNode(
+                    child_data.get('value'),
+                    child_data.get('freq', 0.0)
+                )
+                current_node._children.append(child_node)
+                stack.append((child_data, child_node))
+
+        loaded_trie._root = root_node
+
+    loaded_trie._current_n_gram_size = data.get('current_n_gram_size', 0)
+    loaded_trie._max_ngram_size = max_ngram_size
+    loaded_trie._encoded_corpus = encoded_corpus
+
+    return loaded_trie
