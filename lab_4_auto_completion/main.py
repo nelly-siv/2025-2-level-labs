@@ -5,7 +5,12 @@ Lab 4
 # pylint: disable=unused-argument, super-init-not-called, unused-private-member, duplicate-code, unused-import
 import json
 
-from lab_3_generate_by_ngrams.main import BackOffGenerator, NGramLanguageModel, TextProcessor
+from lab_3_generate_by_ngrams.main import (
+    BackOffGenerator,
+    NGramLanguageModel,
+    TextProcessor
+)
+
 
 NGramType = tuple[int, ...]
 "Type alias for NGram."
@@ -994,51 +999,13 @@ def load(path: str) -> DynamicNgramLMTrie:
     Returns:
         DynamicNgramLMTrie: Trie from file.
     """
-    try:
-        with open(path, 'r', encoding='utf-8') as file:
-            data = json.load(file)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return DynamicNgramLMTrie(tuple(), 3)
-    
+    with open(path, 'r', encoding='utf-8') as file:
+        data = json.load(file)
     encoded_corpus = tuple(data.get('encoded_corpus', ()))
     max_ngram_size = data.get('max_ngram_size', 3)
-    current_n_gram_size = data.get('current_n_gram_size', max_ngram_size)
-    
     loaded_trie = DynamicNgramLMTrie(encoded_corpus, max_ngram_size)
-    
-    trie_data = data.get('trie', {})
-    if trie_data:
-        root_node = TrieNode(
-            name=trie_data.get('value'),
-            value=trie_data.get('freq', 0.0)
-        )
-        
-        stack = [(trie_data, root_node)]
-        
-        while stack:
-            current_data, current_node = stack.pop()
-            
-            children_data = current_data.get('children', [])
-            for child_data in children_data:
-                child_node = TrieNode(
-                    name=child_data.get('value'),
-                    value=child_data.get('freq', 0.0)
-                )
-                
-                if child_node.get_name() is not None:
-                    current_node.add_child(child_node.get_name())
-                    
-                    for existing_child in current_node.get_children():
-                        if existing_child.get_name() == child_node.get_name():
-                            existing_child.set_value(child_node.get_value())
-                            break
-                    
-                    stack.append((child_data, child_node))
-        
-        loaded_trie._root = root_node
-    
-    loaded_trie._current_n_gram_size = current_n_gram_size
-    loaded_trie._max_ngram_size = max_ngram_size
-    loaded_trie._encoded_corpus = encoded_corpus
-    
+    result = loaded_trie.build()
+    if result != 0:
+        return DynamicNgramLMTrie(tuple(), max_ngram_size)
+    loaded_trie.set_current_ngram_size(data.get('current_n_gram_size', max_ngram_size))
     return loaded_trie
