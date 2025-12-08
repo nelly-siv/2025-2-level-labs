@@ -7,7 +7,6 @@ from lab_3_generate_by_ngrams.main import BeamSearchTextGenerator, GreedyTextGen
 from lab_4_auto_completion.main import (
     DynamicBackOffGenerator,
     DynamicNgramLMTrie,
-    IncorrectNgramError,
     load,
     NGramTrieLanguageModel,
     PrefixTrie,
@@ -16,12 +15,13 @@ from lab_4_auto_completion.main import (
 )
 
 
-def clean_text(text):
+def clean_text(text: str):
+    """
+    Clean text out of extra spaces
+    """
     if text is None:
         return None
-    words = text.split()
-    cleaned = ''.join(words)
-    return cleaned
+    return ''.join(text.split())
 
 def main() -> None:
     """
@@ -40,11 +40,10 @@ def main() -> None:
     trie.fill(hp_text)
     suggestion = trie.suggest((2,))
     if suggestion:
-        first = suggestion[0]
         decoded = []
-        for word_id in first:
-            for word, id in processor._storage.items():
-                if id == word_id:
+        for word_id in suggestion[0]:
+            for word, word_id_value in processor._storage.items():
+                if word_id_value == word_id:
                     decoded.append(word)
                     break
         decoded_text = processor._postprocess_decoded_text(tuple(decoded))
@@ -53,17 +52,14 @@ def main() -> None:
     model = NGramTrieLanguageModel(hp_text, 5)
     model.build()
 
-    greedy_before = GreedyTextGenerator(model, processor).run(52, 'Dear')
-    print(f"Greedy result before: {clean_text(greedy_before)}")
+    print(f"Greedy result before: {clean_text(GreedyTextGenerator(model, processor).run(52, 'Dear'))}")
     print(f"Beam result before: {BeamSearchTextGenerator(model, processor, 3).run('Dear', 52)}")
 
     ussr_text = processor.encode_sentences(ussr_letters)
     model.update(ussr_text)
 
-    greedy_after = GreedyTextGenerator(model, processor).run(52, 'Dear')
-    print(f"Greedy result after: {clean_text(greedy_after)}")
-    beam_updated = BeamSearchTextGenerator(model, processor, 3).run('Dear', 52)
-    print(f"Beam result after: {beam_updated}")
+    print(f"Greedy result after: {clean_text(GreedyTextGenerator(model, processor).run(52, 'Dear'))}")
+    print(f"Beam result after: {BeamSearchTextGenerator(model, processor, 3).run('Dear', 52)}")
 
     dynamic_trie = DynamicNgramLMTrie(hp_text, 5)
     dynamic_trie.build()
@@ -71,14 +67,13 @@ def main() -> None:
     save(dynamic_trie, "./saved_dynamic_trie.json")
     loaded_trie = load("./saved_dynamic_trie.json")
 
-    dynamic_generator = DynamicBackOffGenerator(loaded_trie, processor)
-    print(f"Dynamic result before: {dynamic_generator.run(50, 'Ivanov')}")
+    print(f"Dynamic result before: {DynamicBackOffGenerator(loaded_trie, processor).run(50, 'Ivanov')}")
 
     loaded_trie.update(ussr_text)
     loaded_trie.set_current_ngram_size(3)
 
-    print(f"Dynamic result after: {dynamic_generator.run(50, 'Ivanov')}\n")
-    result = dynamic_generator
+    print(f"Dynamic result after: {DynamicBackOffGenerator(loaded_trie, processor).run(50, 'Ivanov')}\n")
+    result = DynamicBackOffGenerator(loaded_trie, processor)
     assert result, "Result is None"
 
 
