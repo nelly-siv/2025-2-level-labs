@@ -629,9 +629,9 @@ class NGramTrieLanguageModel(PrefixTrie, NGramLanguageModel):
             relative_freq = count / total_ngrams
             try:
                 node = self.get_prefix(ngram)
-                node.set_value(relative_freq)
             except TriePrefixNotFoundError:
                 continue
+            node.set_value(relative_freq)
 
 
 class DynamicNgramLMTrie(NGramTrieLanguageModel):
@@ -689,9 +689,9 @@ class DynamicNgramLMTrie(NGramTrieLanguageModel):
             self._models[ngram_size] = model
         try:
             self._merge()
-            return 0
         except MergeTreesError:
             return 1
+        return 0
 
     def set_current_ngram_size(self, current_n_gram_size: int | None) -> None:
         """
@@ -744,15 +744,14 @@ class DynamicNgramLMTrie(NGramTrieLanguageModel):
         context = sequence[-context_size:]
         try:
             prefix_node = self.get_prefix(context)
-            result = {}
-            for child in prefix_node.get_children():
-                child_name = child.get_name()
-                if child_name is not None:
-                    result[child_name] = child.get_value()
-
-            return result
         except TriePrefixNotFoundError:
             return {}
+        result = {}
+        for child in prefix_node.get_children():
+            child_name = child.get_name()
+            if child_name is not None:
+                result[child_name] = child.get_value()
+        return result
 
     def _assign_child(self, parent: TrieNode, node_name: int, freq: float = 0.0) -> TrieNode:
         """
@@ -816,10 +815,11 @@ class DynamicNgramLMTrie(NGramTrieLanguageModel):
             children = source_node.get_children()
             for source_child in children:
                 child_name = source_child.get_name()
-                if child_name is not None:
-                    dest_child = self._assign_child(dest_node, child_name,
-                                                  source_child.get_value())
-                    stack.append((source_child, dest_child))
+                if child_name is None:
+                    continue
+                dest_child = self._assign_child(dest_node, child_name,
+                                                source_child.get_value())
+                stack.append((source_child, dest_child))
 
 
 class DynamicBackOffGenerator(BackOffGenerator):

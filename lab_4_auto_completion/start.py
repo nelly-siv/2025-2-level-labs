@@ -16,6 +16,13 @@ from lab_4_auto_completion.main import (
 )
 
 
+def clean_text(text):
+    if text is None:
+        return None
+    words = text.split()
+    cleaned = ''.join(words)
+    return cleaned
+
 def main() -> None:
     """
     Launches an implementation.
@@ -31,21 +38,32 @@ def main() -> None:
 
     trie = PrefixTrie()
     trie.fill(hp_text)
-    suggestion = trie.suggest((2,))[0]
-    print(f"Decoded result: {processor.decode(suggestion)}")
+    suggestion = trie.suggest((2,))
+    if suggestion:
+        first = suggestion[0]
+        decoded = []
+        for word_id in first:
+            for word, id in processor._storage.items():
+                if id == word_id:
+                    decoded.append(word)
+                    break
+        decoded_text = processor._postprocess_decoded_text(tuple(decoded))
+    print(f"Decoded result: {decoded_text}")
 
     model = NGramTrieLanguageModel(hp_text, 5)
     model.build()
 
-    print(f"Greedy result before: {GreedyTextGenerator(model, processor).run(52, 'Dear')}")
+    greedy_before = GreedyTextGenerator(model, processor).run(52, 'Dear')
+    print(f"Greedy result before: {clean_text(greedy_before)}")
     print(f"Beam result before: {BeamSearchTextGenerator(model, processor, 3).run('Dear', 52)}")
 
     ussr_text = processor.encode_sentences(ussr_letters)
     model.update(ussr_text)
 
-    print(f"Greedy result after: {GreedyTextGenerator(model, processor).run(52, 'Dear')}")
+    greedy_after = GreedyTextGenerator(model, processor).run(52, 'Dear')
+    print(f"Greedy result after: {clean_text(greedy_after)}")
     beam_updated = BeamSearchTextGenerator(model, processor, 3).run('Dear', 52)
-    print(f"Beam result before: {beam_updated}")
+    print(f"Beam result after: {beam_updated}")
 
     dynamic_trie = DynamicNgramLMTrie(hp_text, 5)
     dynamic_trie.build()
@@ -58,10 +76,6 @@ def main() -> None:
 
     loaded_trie.update(ussr_text)
     loaded_trie.set_current_ngram_size(3)
-    try:
-        loaded_trie.set_current_ngram_size(3)
-    except IncorrectNgramError:
-        loaded_trie.set_current_ngram_size(None)
 
     print(f"Dynamic result after: {dynamic_generator.run(50, 'Ivanov')}\n")
     result = dynamic_generator
