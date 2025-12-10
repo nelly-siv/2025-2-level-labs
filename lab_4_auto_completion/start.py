@@ -51,13 +51,14 @@ def main() -> None:
     save(dynamic_trie, "./saved_dynamic_trie.json")
     loaded_trie = load("./saved_dynamic_trie.json")
 
-    print(f"Dynamic result before: {DynamicBackOffGenerator(loaded_trie, processor).run(50, 'Ivanov')}")
+    generator = DynamicBackOffGenerator(loaded_trie, processor)
+    print(f"\n4. Dynamic result before: {generator.run(50, 'Ivanov')}")
 
     loaded_trie.update(ussr_text)
     loaded_trie.set_current_ngram_size(3)
 
-    print(f"Dynamic result after: {DynamicBackOffGenerator(loaded_trie, processor).run(50, 'Ivanov')}\n")
-    result = DynamicBackOffGenerator(loaded_trie, processor)
+    print(f"Dynamic result after: {generator.run(50, 'Ivanov')}\n")
+    result = generator
     assert result, "Result is None"
 
 
