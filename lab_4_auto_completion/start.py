@@ -15,14 +15,6 @@ from lab_4_auto_completion.main import (
 )
 
 
-def clean_text(text: str):
-    """
-    Clean text out of extra spaces
-    """
-    if text is None:
-        return None
-    return ''.join(text.split())
-
 def main() -> None:
     """
     Launches an implementation.
@@ -38,27 +30,19 @@ def main() -> None:
 
     trie = PrefixTrie()
     trie.fill(hp_text)
-    suggestion = trie.suggest((2,))
-    if suggestion:
-        decoded = []
-        for word_id in suggestion[0]:
-            for word, word_id_value in processor._storage.items():
-                if word_id_value == word_id:
-                    decoded.append(word)
-                    break
-        decoded_text = processor._postprocess_decoded_text(tuple(decoded))
-    print(f"Decoded result: {decoded_text}")
+    suggestion = trie.suggest((2,))[0]
+    print(f"Decoded result: {processor.decode(suggestion)}")
 
     model = NGramTrieLanguageModel(hp_text, 5)
     model.build()
 
-    print(f"Greedy result before: {clean_text(GreedyTextGenerator(model, processor).run(52, 'Dear'))}")
+    print(f"Greedy result before: {GreedyTextGenerator(model, processor).run(52, 'Dear')}")
     print(f"Beam result before: {BeamSearchTextGenerator(model, processor, 3).run('Dear', 52)}")
 
     ussr_text = processor.encode_sentences(ussr_letters)
     model.update(ussr_text)
 
-    print(f"Greedy result after: {clean_text(GreedyTextGenerator(model, processor).run(52, 'Dear'))}")
+    print(f"Greedy result after: {GreedyTextGenerator(model, processor).run(52, 'Dear')}")
     print(f"Beam result after: {BeamSearchTextGenerator(model, processor, 3).run('Dear', 52)}")
 
     dynamic_trie = DynamicNgramLMTrie(hp_text, 5)
